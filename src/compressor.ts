@@ -63,4 +63,9 @@ export class ReactASTCompressor {
       savingsPercent,
     };
   }
+
+  /** Rough token estimate (~4 chars per token). */
+  estimateTokens(text: string): number {
+    return estimateTokens(text);
+  }
 }
