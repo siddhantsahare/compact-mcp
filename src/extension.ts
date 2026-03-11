@@ -4,6 +4,34 @@ import { ReactASTCompressor } from './compressor.js';
 export function activate(context: vscode.ExtensionContext): void {
   const compressor = new ReactASTCompressor();
 
+  // ─── Status Bar Item ─────────────────────────────────────────
+  const statusBar = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Right, 100);
+  statusBar.command = 'react-preprocessor.copyCompressed';
+  statusBar.tooltip = 'React Preprocessor: Click to copy compressed code to clipboard';
+
+  function updateStatusBar(document?: vscode.TextDocument) {
+    const doc = document ?? vscode.window.activeTextEditor?.document;
+    if (!doc || !/\.[jt]sx?$/.test(doc.fileName)) {
+      statusBar.hide();
+      return;
+    }
+    try {
+      const { savingsPercent, originalTokens, compressedTokens } = compressor.compress(doc.getText());
+      statusBar.text = `$(symbol-structure) ${savingsPercent}% saved (${compressedTokens}/${originalTokens} tk)`;
+      statusBar.show();
+    } catch {
+      statusBar.text = '$(symbol-structure) ReactPreprocessor';
+      statusBar.show();
+    }
+  }
+
+  context.subscriptions.push(
+    statusBar,
+    vscode.window.onDidChangeActiveTextEditor((e) => updateStatusBar(e?.document)),
+    vscode.workspace.onDidSaveTextDocument(updateStatusBar),
+  );
+  updateStatusBar();
+
   // ─── Chat Participant: @processor ─────────────────────────────
   const participant = vscode.chat.createChatParticipant(
     'react-preprocessor',
@@ -130,7 +158,36 @@ export function activate(context: vscode.ExtensionContext): void {
     },
   );
 
-  context.subscriptions.push(participant, compressCmd, compressSelCmd);
+  // ─── Command: Copy Compressed File to Clipboard ─────────────
+  const copyCompressedCmd = vscode.commands.registerCommand(
+    'react-preprocessor.copyCompressed',
+    async () => {
+      const editor = vscode.window.activeTextEditor;
+      if (!editor) {
+        vscode.window.showWarningMessage('Open a React file first.');
+        return;
+      }
+
+      const code = editor.document.getText();
+      let result;
+      try {
+        result = compressor.compress(code);
+      } catch (err) {
+        const message = err instanceof Error ? err.message : String(err);
+        vscode.window.showErrorMessage(`Parse error: ${message}`);
+        return;
+      }
+
+      await vscode.env.clipboard.writeText(result.compressed);
+
+      vscode.window.showInformationMessage(
+        `Copied to clipboard — ${result.originalTokens} → ${result.compressedTokens} tokens (${result.savingsPercent}% saved). Paste into your AI chat.`,
+      );
+    },
+  );
+
+  context.subscriptions.push(participant, compressCmd, compressSelCmd, copyCompressedCmd);
+  // statusBar, onDidChangeActiveTextEditor, onDidSaveTextDocument already pushed above
 }
 
 export function deactivate(): void {}

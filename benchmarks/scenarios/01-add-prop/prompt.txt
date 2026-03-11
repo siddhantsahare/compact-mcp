@@ -1,0 +1,9 @@
+Add an `isDisabled` boolean prop to the ActionButton component.
+
+When `isDisabled` is true:
+- The button must be non-interactive (use the native `disabled` attribute).
+- It should appear visually grayed out regardless of the current `variant`.
+- The hover/focus styles should NOT apply while disabled.
+- The `isPressed` animation should NOT fire while disabled.
+
+Keep all existing props and behaviour intact.

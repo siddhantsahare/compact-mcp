@@ -1,0 +1,11 @@
+Fix the infinite re-render loop in the UserProfile component.
+
+The root cause is that `filters` (an object) is listed as a useEffect dependency AND mutated
+inside the same effect via `setFilters`. This recreates the object reference each render,
+so the effect fires again immediately after every fetch.
+
+Requirements:
+- The effect should only re-run when `userId`, `includeEmail`, or `includeAvatar` genuinely change.
+- Remove the mutation of `filters` from inside the effect entirely — the emailVerified logic should be dropped or handled differently.
+- The `toggleEmail` button and `includeAvatar` display must still work correctly.
+- Do NOT flatten the state if it requires adding more than one new useState call; prefer useCallback or stable references.

@@ -5,3 +5,4 @@ out/
 *.d.ts.map
 .vscode-test/
 *.vsix
+benchmarks/results/

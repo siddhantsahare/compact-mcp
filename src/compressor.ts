@@ -1,7 +1,8 @@
 import generate from '@babel/generator';
 import { parse, estimateTokens } from './parser.js';
 import { ALL_RULES } from './rules/index.js';
-import type { CompressorOptions, CompressResult, RuleName, PruningRule } from './types.js';
+import { makeStripJsxAttributes } from './rules/stripJsxAttributes.js';
+import type { CompressorOptions, CompressResult, RuleName, PruningRule, PreprocessorOptions } from './types.js';
 
 /** Default options — all rules enabled. */
 const DEFAULT_OPTIONS: CompressorOptions = {
@@ -13,19 +14,31 @@ const DEFAULT_OPTIONS: CompressorOptions = {
   collapseStyles: true,
   stripTypeAnnotations: true,
   stripTestAttributes: true,
+  // V2 aggressive skeletonization rules (opt-in by default)
+  stripJsxAttributes: true,
+  skeletonizeJsx: false,
+  collapseHelperBodies: true,
+  // V3 enterprise bloat rules
+  pruneUnusedImports: true,
+  skeletonizeTypes: true,
 };
 
 export class ReactASTCompressor {
   readonly options: CompressorOptions;
+  readonly processorOptions: PreprocessorOptions;
   private rules: Map<RuleName, PruningRule> = new Map();
 
-  constructor(options: Partial<CompressorOptions> = {}) {
+  constructor(options: Partial<CompressorOptions> = {}, processorOptions: PreprocessorOptions = {}) {
     this.options = { ...DEFAULT_OPTIONS, ...options };
+    this.processorOptions = processorOptions;
 
     // Register all built-in rules
     for (const [name, rule] of ALL_RULES) {
       this.rules.set(name, rule);
     }
+
+    // Apply processor options to rules that support fine-grained control
+    this.rules.set('stripJsxAttributes', makeStripJsxAttributes(processorOptions));
   }
 
   /** Register a pruning rule implementation. */

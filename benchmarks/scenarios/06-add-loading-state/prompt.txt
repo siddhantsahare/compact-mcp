@@ -1,0 +1,9 @@
+Add proper loading and error state to the ContactForm component.
+
+Requirements:
+- Add a `loading` boolean state. Set it to true before the fetch, false after it resolves or rejects.
+- Disable the Submit button while loading and show the label "Sending…" instead of "Send message".
+- Add an `error` string state. If the fetch response is not ok, set an error message and do NOT call onSuccess.
+- Display the error message in a red paragraph below the submit button.
+- On success, clear the form back to empty strings (don't rely on onSuccess to do this).
+- Prevent duplicate submissions: the button must be disabled while loading.

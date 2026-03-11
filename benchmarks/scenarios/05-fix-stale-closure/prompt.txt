@@ -1,0 +1,12 @@
+Fix the stale closure bug in CountdownTimer.
+
+The interval callback captures the initial values of `seconds` and `onExpire` from the first
+render, so `seconds - 1` is always computed from the stale value and the `onExpire` call never
+triggers.
+
+Fix requirements:
+- Use the functional form of `setSeconds` so the interval doesn't need `seconds` in its closure.
+- Use a `useRef` to always hold the latest `onExpire` callback so the expired check sees the current callback.
+- The effect should only depend on `isRunning` — no other items in the dep array.
+- Pause/Start and Reset buttons must continue to work correctly.
+- When the timer expires (reaches 0), it should stop automatically and call `onExpire`.

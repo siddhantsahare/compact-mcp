@@ -16,7 +16,7 @@ export const BABEL_BASE_PLUGINS: ParserPlugin[] = [
 
 // ─── Pruning Rules ──────────────────────────────────────────────
 
-/** Names of the eight pruning rules the compressor supports. */
+/** Names of all pruning rules the compressor supports. */
 export type RuleName =
   | 'stripComments'
   | 'stripConsoleLogs'
@@ -25,7 +25,14 @@ export type RuleName =
   | 'stripPropTypes'
   | 'collapseStyles'
   | 'stripTypeAnnotations'
-  | 'stripTestAttributes';
+  | 'stripTestAttributes'
+  // V2 aggressive skeletonization rules
+  | 'stripJsxAttributes'
+  | 'skeletonizeJsx'
+  | 'collapseHelperBodies'
+  // V3 enterprise bloat rules
+  | 'pruneUnusedImports'
+  | 'skeletonizeTypes';
 
 /** A pruning rule is a function that mutates a Babel AST in place. */
 export type PruningRule = (ast: File) => void;
@@ -37,6 +44,18 @@ export type RuleRegistry = Record<RuleName, PruningRule>;
 
 /** Per-rule toggle options — all default to `true`. */
 export type CompressorOptions = Record<RuleName, boolean>;
+
+/**
+ * Fine-grained content-preservation flags, independent of which rules are
+ * enabled.  Pass these when the task demands structural fidelity over
+ * maximum compression (e.g., "byte-for-byte identical JSX" prompts).
+ */
+export interface PreprocessorOptions {
+  /** Keep className and style={} attributes (default: strip them). */
+  preserveStyles?: boolean;
+  /** Keep data-testid / data-* attributes (default: strip them). */
+  preserveTestIds?: boolean;
+}
 
 /** Result returned by `ReactASTCompressor.compress()`. */
 export interface CompressResult {

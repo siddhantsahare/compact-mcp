@@ -1,0 +1,13 @@
+Extract the search logic from SearchPage into a reusable custom hook called `useSearch`.
+
+The hook should:
+- Accept `initialCategory` as an optional parameter (default: 'all').
+- Internally manage: query, category, results, loading, error, page state.
+- Return: { query, category, results, loading, error, page, setQuery, setCategory, setPage }.
+- Handle the AbortController cleanup on unmount / re-trigger.
+- Reset `page` to 1 whenever `query` or `category` changes (keep this inside the hook).
+
+After extraction, SearchPage should contain ONLY JSX and call `useSearch()`. It must NOT contain
+any useState, useEffect, or useCallback calls of its own.
+
+Put the hook in the same file above the component for now.

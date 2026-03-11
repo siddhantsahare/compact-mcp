@@ -29,18 +29,56 @@
     "commands": [
       {
         "command": "react-preprocessor.compressFile",
-        "title": "React Preprocessor: Compress Active File"
+        "title": "React Preprocessor: Compress Active File",
+        "icon": "$(symbol-structure)"
       },
       {
         "command": "react-preprocessor.compressSelection",
-        "title": "React Preprocessor: Compress Selection"
+        "title": "React Preprocessor: Compress Selection",
+        "icon": "$(symbol-structure)"
+      },
+      {
+        "command": "react-preprocessor.copyCompressed",
+        "title": "React Preprocessor: Copy Compressed File to Clipboard",
+        "icon": "$(clippy)"
       }
-    ]
+    ],
+    "keybindings": [
+      {
+        "command": "react-preprocessor.copyCompressed",
+        "key": "ctrl+shift+alt+c",
+        "mac": "cmd+shift+alt+c",
+        "when": "editorTextFocus && resourceExtname =~ /\\.[jt]sx?$/"
+      }
+    ],
+    "menus": {
+      "editor/context": [
+        {
+          "command": "react-preprocessor.copyCompressed",
+          "when": "resourceExtname =~ /\\.[jt]sx?$/",
+          "group": "9_cutcopypaste@99"
+        },
+        {
+          "command": "react-preprocessor.compressFile",
+          "when": "resourceExtname =~ /\\.[jt]sx?$/",
+          "group": "9_cutcopypaste@100"
+        }
+      ],
+      "editor/title": [
+        {
+          "command": "react-preprocessor.copyCompressed",
+          "when": "resourceExtname =~ /\\.[jt]sx?$/",
+          "group": "navigation"
+        }
+      ]
+    }
   },
   "scripts": {
     "build": "tsc",
     "watch": "tsc --watch",
     "benchmark": "npm run build && node dist/benchmark.js",
+    "evals": "npm run build && node dist/run_evals.js",
+    "evals:dry": "npm run build && node dist/run_evals.js --dry-run",
     "lint": "eslint src/",
     "pretest": "npm run build && npm run lint",
     "test": "vscode-test"
@@ -56,6 +94,8 @@
     "@types/babel__traverse": "^7.28.0",
     "@types/mocha": "^10.0.10",
     "@types/node": "22.x",
+    "@types/react": "^19.2.14",
+    "@types/react-dom": "^19.2.3",
     "@types/vscode": "^1.110.0",
     "@vscode/test-cli": "^0.0.12",
     "@vscode/test-electron": "^2.5.2",

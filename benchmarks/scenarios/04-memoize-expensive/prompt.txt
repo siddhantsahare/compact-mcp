@@ -1,0 +1,10 @@
+The `filtered` and `sorted` arrays in ProductList are recomputed on every render, which
+is problematic because `computeScore` contains an expensive loop (100k iterations per product).
+
+Memoize the computation so it only reruns when its actual inputs change:
+- `filtered` depends on: `products`, `query`, `showInStockOnly`
+- `sorted` depends on: `filtered`, `sortBy`, `query`
+
+Use `useMemo` for both. Do NOT use `useCallback` here.
+Also memoize the `onAddToCart` prop call sites only if it requires `useCallback` wrapping —
+but do not add unnecessary memoization beyond what's needed for the two derived arrays.

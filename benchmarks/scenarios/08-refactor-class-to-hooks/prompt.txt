@@ -1,0 +1,10 @@
+Convert the ThemeToggle class component to a functional component using React hooks.
+
+Requirements:
+- Replace the class with a `function ThemeToggle(...)` — keep the same Props interface.
+- Replace `this.state` with `useState`.
+- Replace `componentDidMount` + `componentWillUnmount` media query setup with a single `useEffect` that registers/unregisters the listener.
+- Replace `componentDidUpdate` (data-theme sync) with a separate `useEffect([theme])`.
+- Replace `this.handleToggle` and `this.handleSystemChange` with plain `const` functions or `useCallback` as appropriate.
+- Remove the class entirely — no `Component`, no `constructor`, no `bind` calls.
+- The rendered JSX must be byte-for-byte identical to the original `render()` output, just without `this.`.

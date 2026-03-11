@@ -1,0 +1,18 @@
+Refactor DashboardCard to use the shared design system components instead of raw HTML elements with inline styles.
+
+Available components (already installed in this project):
+  import { Card, CardHeader, CardContent } from '@/components/ui/card';
+  import { Button } from '@/components/ui/button';
+  import { Badge } from '@/components/ui/badge';
+
+Mapping:
+- The outer <div> wrapper → <Card>
+- The title + action row → <CardHeader> with `title` and `action` slot
+- The metrics list → <CardContent>
+- The "Refresh" button → <Button variant="outline" size="sm">
+- The "Export" button → <Button variant="default" size="sm">
+- The trend pill → <Badge variant="success" | "destructive" | "secondary">
+- The "Show more/less" toggle → <Button variant="ghost" size="sm">
+
+Remove ALL inline style props. Use Tailwind utility classes for any remaining layout needs.
+Keep all logic (useState, slice, expanded) unchanged.

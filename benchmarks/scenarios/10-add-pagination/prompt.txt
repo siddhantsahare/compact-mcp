@@ -1,0 +1,13 @@
+Add client-side pagination to DataTable. The component currently renders all rows in one pass.
+
+Requirements:
+- Add a `pageSize` prop (number, default 10).
+- Add internal `page` state (1-indexed, starts at 1).
+- Compute the visible slice from the sorted array: `sorted.slice((page-1)*pageSize, page*pageSize)`.
+- Reset `page` to 1 whenever `sortKey` or `sortDir` changes.
+- Add a pagination control bar below the table showing:
+    - "Showing X–Y of Z" label.
+    - Previous / Next buttons (disabled at boundaries).
+    - Optionally: direct page number buttons for up to 5 pages around current.
+- Do NOT add any new npm packages — implement purely in React.
+- Keep the sort logic and column definitions unchanged.

@@ -1,0 +1,11 @@
+Add a proper empty state to NotificationList for when there are no notifications.
+
+When `notifications.length === 0`, render an empty state inside the `<section>` instead of
+the list. The empty state should contain:
+- A bell icon (use the unicode character 🔔 or an SVG — your choice).
+- A heading: "All caught up!"
+- A subtext: "No notifications right now. Check back later."
+- Center everything vertically and horizontally inside a container with min-height of 160px.
+
+Also update the "Clear all" button: disable it (and visually grey it out) when there are no notifications.
+Keep the header row (title + Clear all) always visible regardless of empty state.
