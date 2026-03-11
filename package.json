@@ -1,0 +1,64 @@
+{
+  "name": "react-preprocessor",
+  "displayName": "React AST Preprocessor",
+  "description": "Deterministic AST-based compression for React code — strips structural noise while preserving semantic intent",
+  "version": "0.1.0",
+  "engines": {
+    "vscode": "^1.110.0",
+    "node": ">=18.0.0"
+  },
+  "enabledApiProposals": [
+    "languageModelSystem"
+  ],
+  "categories": [
+    "Other"
+  ],
+  "activationEvents": [],
+  "main": "./dist/extension.js",
+  "bin": {
+    "react-preprocessor": "./dist/cli.js"
+  },
+  "contributes": {
+    "chatParticipants": [
+      {
+        "id": "react-preprocessor",
+        "name": "processor",
+        "description": "Compresses React code via AST pruning to save tokens"
+      }
+    ],
+    "commands": [
+      {
+        "command": "react-preprocessor.compressFile",
+        "title": "React Preprocessor: Compress Active File"
+      },
+      {
+        "command": "react-preprocessor.compressSelection",
+        "title": "React Preprocessor: Compress Selection"
+      }
+    ]
+  },
+  "scripts": {
+    "build": "tsc",
+    "watch": "tsc --watch",
+    "lint": "eslint src/",
+    "pretest": "npm run build && npm run lint",
+    "test": "vscode-test"
+  },
+  "dependencies": {
+    "@babel/generator": "^7.22.5",
+    "@babel/parser": "^7.22.5",
+    "@babel/traverse": "^7.22.5",
+    "@babel/types": "^7.22.5"
+  },
+  "devDependencies": {
+    "@types/babel__generator": "^7.27.0",
+    "@types/babel__traverse": "^7.28.0",
+    "@types/mocha": "^10.0.10",
+    "@types/node": "22.x",
+    "@types/vscode": "^1.110.0",
+    "@vscode/test-cli": "^0.0.12",
+    "@vscode/test-electron": "^2.5.2",
+    "eslint": "^9.39.3",
+    "typescript": "^5.9.3"
+  }
+}
