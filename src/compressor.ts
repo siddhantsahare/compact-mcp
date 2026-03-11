@@ -1,5 +1,6 @@
 import generate from '@babel/generator';
 import { parse, estimateTokens } from './parser.js';
+import { ALL_RULES } from './rules/index.js';
 import type { CompressorOptions, CompressResult, RuleName, PruningRule } from './types.js';
 
 /** Default options — all rules enabled. */
@@ -20,6 +21,11 @@ export class ReactASTCompressor {
 
   constructor(options: Partial<CompressorOptions> = {}) {
     this.options = { ...DEFAULT_OPTIONS, ...options };
+
+    // Register all built-in rules
+    for (const [name, rule] of ALL_RULES) {
+      this.rules.set(name, rule);
+    }
   }
 
   /** Register a pruning rule implementation. */
