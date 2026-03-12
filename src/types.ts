@@ -106,6 +106,19 @@ export interface ReadAndCompressArgs {
   filePath: string;
 }
 
+/** Arguments for the `compact_read_exact_function` tool. */
+export interface ReadExactFunctionArgs {
+  filePath: string;
+  functionName: string;
+}
+
+/** Arguments for the `compact_apply_edit` tool. */
+export interface ApplyEditArgs {
+  filePath: string;
+  searchString: string;
+  replaceString: string;
+}
+
 // ─── Session Cache ──────────────────────────────────────────────
 
 /**

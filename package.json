@@ -57,6 +57,25 @@
           },
           "required": ["filePath"]
         }
+      },
+      {
+        "name": "compact_read_exact_function",
+        "tags": ["compact"],
+        "description": "Extracts the complete, uncompressed, raw source code of a specific named function or component from a file. Use this when the compressed skeleton is not enough to safely edit a function.",
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "filePath": {
+              "type": "string",
+              "description": "Workspace-relative path to the file (e.g. 'src/components/BookingListItem.tsx')."
+            },
+            "functionName": {
+              "type": "string",
+              "description": "The exact name of the function, component, or variable to extract (e.g. 'BookingListItem', 'handleSubmit', 'RequestSentMessage')."
+            }
+          },
+          "required": ["filePath", "functionName"]
+        }
       }
     ],
     "commands": [
