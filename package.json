@@ -2,7 +2,7 @@
   "name": "compact-for-copilot",
   "displayName": "Compact",
   "description": "Smart context optimizer for React. Fit massive components into Copilot with zero token bloat.",
-  "publisher": "compact-for-copilot",
+  "publisher": "compact-labs",
   "icon": "assets/icon.png",
   "version": "0.1.0",
   "engines": {
