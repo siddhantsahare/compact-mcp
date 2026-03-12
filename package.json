@@ -1,51 +1,84 @@
 {
-  "name": "react-preprocessor",
-  "displayName": "React AST Preprocessor",
-  "description": "Deterministic AST-based compression for React code — strips structural noise while preserving semantic intent",
+  "name": "compact-for-copilot",
+  "displayName": "Compact",
+  "description": "Smart context optimizer for React. Fit massive components into Copilot with zero token bloat.",
+  "publisher": "compact-for-copilot",
+  "icon": "assets/icon.png",
   "version": "0.1.0",
   "engines": {
-    "vscode": "^1.110.0",
-    "node": ">=18.0.0"
+    "vscode": "^1.110.0"
   },
-  "enabledApiProposals": [
-    "languageModelSystem"
-  ],
   "categories": [
     "Other"
   ],
-  "activationEvents": [],
+  "activationEvents": [
+    "onChatParticipant:compact-for-copilot.compact"
+  ],
   "main": "./dist/extension.js",
   "bin": {
-    "react-preprocessor": "./dist/cli.js"
+    "compact": "./dist/cli.js"
   },
   "contributes": {
     "chatParticipants": [
       {
-        "id": "react-preprocessor",
-        "name": "processor",
-        "description": "Compresses React code via AST pruning to save tokens"
+        "id": "compact-for-copilot.compact",
+        "name": "compact",
+        "description": "Autonomous React assistant — safely optimizes workspace files and streams precise fixes.",
+        "isSticky": true
+      }
+    ],
+    "languageModelTools": [
+      {
+        "name": "compact_search_workspace",
+        "tags": ["compact"],
+        "description": "Search the workspace for React component and hook files matching a keyword. Returns a list of matching file paths.",
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "keyword": {
+              "type": "string",
+              "description": "A filename keyword or glob fragment to search for (e.g. 'Button', 'useAuth', 'Header')."
+            }
+          },
+          "required": ["keyword"]
+        }
+      },
+      {
+        "name": "compact_read_and_compress",
+        "tags": ["compact"],
+        "description": "Read a React/TypeScript file from the workspace, intelligently compress it for minimal token usage, and return the optimised source. Use this to understand a file's structure and logic efficiently.",
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "filePath": {
+              "type": "string",
+              "description": "Workspace-relative path to the file to read and compress (e.g. 'src/components/Button.tsx')."
+            }
+          },
+          "required": ["filePath"]
+        }
       }
     ],
     "commands": [
       {
-        "command": "react-preprocessor.compressFile",
-        "title": "React Preprocessor: Compress Active File",
+        "command": "compact.compressFile",
+        "title": "Compact: Compress Active File",
         "icon": "$(symbol-structure)"
       },
       {
-        "command": "react-preprocessor.compressSelection",
-        "title": "React Preprocessor: Compress Selection",
+        "command": "compact.compressSelection",
+        "title": "Compact: Compress Selection",
         "icon": "$(symbol-structure)"
       },
       {
-        "command": "react-preprocessor.copyCompressed",
-        "title": "React Preprocessor: Copy Compressed File to Clipboard",
+        "command": "compact.copyCompressed",
+        "title": "Compact: Copy Compressed to Clipboard",
         "icon": "$(clippy)"
       }
     ],
     "keybindings": [
       {
-        "command": "react-preprocessor.copyCompressed",
+        "command": "compact.copyCompressed",
         "key": "ctrl+shift+alt+c",
         "mac": "cmd+shift+alt+c",
         "when": "editorTextFocus && resourceExtname =~ /\\.[jt]sx?$/"
@@ -54,19 +87,19 @@
     "menus": {
       "editor/context": [
         {
-          "command": "react-preprocessor.copyCompressed",
+          "command": "compact.copyCompressed",
           "when": "resourceExtname =~ /\\.[jt]sx?$/",
           "group": "9_cutcopypaste@99"
         },
         {
-          "command": "react-preprocessor.compressFile",
+          "command": "compact.compressFile",
           "when": "resourceExtname =~ /\\.[jt]sx?$/",
           "group": "9_cutcopypaste@100"
         }
       ],
       "editor/title": [
         {
-          "command": "react-preprocessor.copyCompressed",
+          "command": "compact.copyCompressed",
           "when": "resourceExtname =~ /\\.[jt]sx?$/",
           "group": "navigation"
         }
@@ -74,8 +107,14 @@
     }
   },
   "scripts": {
-    "build": "tsc",
+    "build": "npm run build:tsc && npm run bundle:extension",
+    "build:tsc": "tsc",
+    "bundle:extension": "esbuild src/extension.ts --bundle --minify --platform=node --target=node18 --format=cjs --external:vscode --outfile=dist/extension.js",
     "watch": "tsc --watch",
+    "watch:bundle": "esbuild src/extension.ts --bundle --platform=node --target=node18 --format=cjs --external:vscode --outfile=dist/extension.js --watch",
+    "vscode:prepublish": "npm run build",
+    "package:vsix": "npx @vscode/vsce package --allow-missing-repository --skip-license",
+    "inspect:vsix": "npx @vscode/vsce ls --tree",
     "benchmark": "npm run build && node dist/benchmark.js",
     "evals": "npm run build && node dist/run_evals.js",
     "evals:dry": "npm run build && node dist/run_evals.js --dry-run",
@@ -99,6 +138,7 @@
     "@types/vscode": "^1.110.0",
     "@vscode/test-cli": "^0.0.12",
     "@vscode/test-electron": "^2.5.2",
+    "esbuild": "^0.27.3",
     "eslint": "^9.39.3",
     "typescript": "^5.9.3"
   }

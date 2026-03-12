@@ -2,6 +2,10 @@
 .vscode-test/**
 src/**
 test/**
+benchmarks/**
+md/**
+HANDOFF.md
+TESTING_AND_PUBLISHING.md
 .gitignore
 .yarnrc
 vsc-extension-quickstart.md
@@ -10,3 +14,10 @@ vsc-extension-quickstart.md
 **/eslint.config.mjs
 **/.vscode-test.*
 node_modules/**
+dist/**
+
+# Ship only the bundled runtime entrypoint.
+!dist/extension.js
+
+# Ship the marketplace icon.
+!assets/icon.png

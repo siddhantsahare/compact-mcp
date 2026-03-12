@@ -1,65 +1,40 @@
-# react-preprocessor-js README
+# React Preprocessor
 
-This is the README for your extension "react-preprocessor-js". After writing up a brief description, we recommend including the following sections.
+A smart context optimizer for React developers. Instantly strip visual bloat and non-essential syntax from your files before sending them to Claude, ChatGPT, or GitHub Copilot. 
+
+Fit massive React components into your context window, reduce API costs, and keep your AI focused purely on the logic.
+
+## Why It Exists
+
+Large React files are packed with UI styling, SVG paths, and metadata that consume thousands of tokens but offer zero value to an LLM trying to fix a bug or write a hook. 
+
+React Preprocessor intelligently skeletonizes your code, drastically reducing token count while preserving the semantic structure and logic the AI actually needs.
+
+- **Maximize Context:** Fit more files into a single prompt.
+- **Save Costs:** Reduce your pay-as-you-go API bills.
+- **100% Local & Private:** Processing happens entirely on your machine. Your code is never sent to a third-party server by this extension.
 
 ## Features
 
-Describe specific features of your extension including screenshots of your extension in action. Image paths are relative to this README file.
+- **Quick Copy:** Instantly copy a compressed version of your file to the clipboard.
+- **Copilot Integration:** Use the `@processor` participant directly in your GitHub Copilot chat.
+- **Live Metrics:** Status bar indicator shows your exact token savings in real-time.
+- **Broad Support:** Works seamlessly with `.js`, `.jsx`, `.ts`, and `.tsx` files.
 
-For example if there is an image subfolder under your extension project workspace:
+## Quick Start
 
-\!\[feature X\]\(images/feature-x.png\)
+1. Open any React or TypeScript file.
+2. Run `React Preprocessor: Copy Compressed File to Clipboard` from the Command Palette.
+3. Paste the optimized code into your LLM chat.
 
-> Tip: Many popular extensions utilize animations. This is an excellent way to show off your extension! We recommend short, focused animations that are easy to follow.
+**Keyboard Shortcuts:**
+- Windows/Linux: `Ctrl+Shift+Alt+C`
+- macOS: `Cmd+Shift+Alt+C`
+
+## Commands
+- `React Preprocessor: Copy Compressed File to Clipboard`
+- `React Preprocessor: Compress Active File`
+- `React Preprocessor: Compress Selection`
 
 ## Requirements
-
-If you have any requirements or dependencies, add a section describing those and how to install and configure them.
-
-## Extension Settings
-
-Include if your extension adds any VS Code settings through the `contributes.configuration` extension point.
-
-For example:
-
-This extension contributes the following settings:
-
-* `myExtension.enable`: Enable/disable this extension.
-* `myExtension.thing`: Set to `blah` to do something.
-
-## Known Issues
-
-Calling out known issues can help limit users opening duplicate issues against your extension.
-
-## Release Notes
-
-Users appreciate release notes as you update your extension.
-
-### 1.0.0
-
-Initial release of ...
-
-### 1.0.1
-
-Fixed issue #.
-
-### 1.1.0
-
-Added features X, Y, and Z.
-
----
-
-## Working with Markdown
-
-You can author your README using Visual Studio Code.  Here are some useful editor keyboard shortcuts:
-
-* Split the editor (`Cmd+\` on macOS or `Ctrl+\` on Windows and Linux)
-* Toggle preview (`Shift+Cmd+V` on macOS or `Shift+Ctrl+V` on Windows and Linux)
-* Press `Ctrl+Space` (Windows, Linux, macOS) to see a list of Markdown snippets
-
-## For more information
-
-* [Visual Studio Code's Markdown Support](http://code.visualstudio.com/docs/languages/markdown)
-* [Markdown Syntax Reference](https://help.github.com/articles/markdown-basics/)
-
-**Enjoy!**
+- VS Code `^1.110.0`

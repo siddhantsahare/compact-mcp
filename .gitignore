@@ -6,3 +6,5 @@ out/
 .vscode-test/
 *.vsix
 benchmarks/results/
+.env
+.env.*

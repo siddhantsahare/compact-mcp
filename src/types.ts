@@ -93,3 +93,34 @@ export interface BenchmarkResult {
   timeMs: string;
   status: string;
 }
+
+// ─── LM Tool Arguments ─────────────────────────────────────────
+
+/** Arguments for the `compact_search_workspace` tool. */
+export interface SearchWorkspaceArgs {
+  keyword: string;
+}
+
+/** Arguments for the `compact_read_and_compress` tool. */
+export interface ReadAndCompressArgs {
+  filePath: string;
+}
+
+// ─── Session Cache ──────────────────────────────────────────────
+
+/**
+ * Per-request cache that tracks which files have already been compressed
+ * during the current chat turn. Prevents redundant AST processing when
+ * the LLM requests the same file more than once.
+ */
+export class CompressedFileCache {
+  private readonly seen = new Set<string>();
+
+  has(filePath: string): boolean {
+    return this.seen.has(filePath);
+  }
+
+  add(filePath: string): void {
+    this.seen.add(filePath);
+  }
+}

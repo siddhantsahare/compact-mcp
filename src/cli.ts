@@ -57,10 +57,10 @@ function parseArgs(argv: string[]): ParsedArgs {
 
 function printHelp(): void {
   console.log(`
-react-preprocessor — AST-based React code compression
+compact — Smart context optimizer for React
 
 USAGE
-  react-preprocessor <file...> [options]
+  compact <file...> [options]
 
 OPTIONS
   -o, --output          Print compressed code to stdout (default: stats only)
@@ -71,9 +71,9 @@ RULES
   ${RULE_NAMES.join('\n  ')}
 
 EXAMPLES
-  react-preprocessor src/App.tsx
-  react-preprocessor src/**/*.tsx --output
-  react-preprocessor src/App.tsx -d stripComments -d collapseStyles
+  compact src/App.tsx
+  compact src/**/*.tsx --output
+  compact src/App.tsx -d stripComments -d collapseStyles
 `);
 }
 
