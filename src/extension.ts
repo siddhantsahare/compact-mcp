@@ -1,17 +1,18 @@
 import * as vscode from 'vscode';
 import { ReactASTCompressor } from './compressor.js';
-import { SearchWorkspaceTool, ReadAndCompressTool, ReadExactFunctionTool, ApplyEditTool } from './tools.js';
+import { SearchWorkspaceTool, ReadAndCompressTool, ReadExactFunctionTool, ApplyEditTool, CreateFileTool } from './tools.js';
 import { CompressedFileCache } from './types.js';
-import type { SearchWorkspaceArgs, ReadAndCompressArgs, ReadExactFunctionArgs, ApplyEditArgs } from './types.js';
+import type { SearchWorkspaceArgs, ReadAndCompressArgs, ReadExactFunctionArgs, ApplyEditArgs, CreateFileArgs } from './types.js';
 
-const TOOL_CALL_LIMIT = 5;
+const TOOL_CALL_LIMIT = 35;
 
 const SYSTEM_PROMPT = `You are @compact, an expert React architectural assistant embedded in VS Code.
-You have four tools available:
+You have five tools available:
 - compact_search_workspace: search the workspace for files by keyword.
 - compact_read_and_compress: read a file, compress it for minimal token usage, and return its structural skeleton.
 - compact_read_exact_function: extract the complete, raw, uncompressed source of a specific named function or component from a file.
 - compact_apply_edit: silently apply a search-and-replace edit directly to the user's file in the IDE.
+- compact_create_file: create a brand new file in the workspace and open it in the editor.
 
 The compressed output safely removes UI boilerplate and inlines trivial JSX while preserving all core logic, state, hooks, and component structure — so you get full architectural understanding at a fraction of the token cost.
 
@@ -77,12 +78,14 @@ export function activate(context: vscode.ExtensionContext): void {
   const readAndCompressTool = new ReadAndCompressTool(initialCache);
   const readExactFunctionTool = new ReadExactFunctionTool();
   const applyEditTool = new ApplyEditTool();
+  const createFileTool = new CreateFileTool();
 
   context.subscriptions.push(
     vscode.lm.registerTool('compact_search_workspace', searchToolInstance),
     vscode.lm.registerTool('compact_read_and_compress', readAndCompressTool),
     vscode.lm.registerTool('compact_read_exact_function', readExactFunctionTool),
     vscode.lm.registerTool('compact_apply_edit', applyEditTool),
+    vscode.lm.registerTool('compact_create_file', createFileTool),
   );
 
   // ─── Chat Participant: @compact ───────────────────────────────
@@ -101,18 +104,8 @@ export function activate(context: vscode.ExtensionContext): void {
     // Fresh cache per chat turn
     readAndCompressTool.resetCache(new CompressedFileCache());
 
-    // ── Select the best available Copilot model ────────────────
-    // Try gpt-4o first; fall back to any copilot model so we always get tool-calling support.
-    let [model] = await vscode.lm.selectChatModels({ vendor: 'copilot', family: 'gpt-4o' });
-    if (!model) {
-      [model] = await vscode.lm.selectChatModels({ vendor: 'copilot' });
-    }
-    if (!model) {
-      stream.markdown(
-        '**@compact**: No Copilot language model is available. Make sure GitHub Copilot Chat is installed and you are signed in.',
-      );
-      return;
-    }
+    // ── Use the user's selected UI model ────────────────
+    const model = request.model;
 
     // ── Build initial messages ─────────────────────────────────
     const messages: vscode.LanguageModelChatMessage[] = [
@@ -189,6 +182,24 @@ export function activate(context: vscode.ExtensionContext): void {
           required: ['filePath', 'searchString', 'replaceString'],
         },
       },
+      {
+        name: 'compact_create_file',
+        description: 'Creates a brand-new file at the given workspace-relative path with the provided content, then opens it in the editor. Never overwrites an existing file — use compact_apply_edit for that.',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            filePath: {
+              type: 'string',
+              description: 'Workspace-relative path for the new file (e.g. "src/utils/bookingHelpers.ts"). Must not already exist.',
+            },
+            content: {
+              type: 'string',
+              description: 'The full source code content to write into the new file.',
+            },
+          },
+          required: ['filePath', 'content'],
+        },
+      },
     ];
 
     // ── Agentic tool-calling loop ──────────────────────────────
@@ -237,12 +248,14 @@ export function activate(context: vscode.ExtensionContext): void {
       for (const toolCall of toolCalls) {
         // Show the user which tool is running
         const friendlyName = toolCall.name === 'compact_search_workspace'
-          ? `Searching workspace for "${(toolCall.input as { keyword?: string }).keyword ?? '…'}"`
+          ? `Searching workspace for "${(toolCall.input as any).keyword}"`
           : toolCall.name === 'compact_read_exact_function'
-          ? `Extracting raw source of "${(toolCall.input as { functionName?: string }).functionName ?? '…'}"`
+          ? `Extracting raw source of "${(toolCall.input as any).functionName}"`
           : toolCall.name === 'compact_apply_edit'
-          ? `Applying edit to "${(toolCall.input as { filePath?: string }).filePath ?? '…'}"`
-          : `Reading & compressing "${(toolCall.input as { filePath?: string }).filePath ?? '…'}"`;
+          ? `Applying silent patch to ${(toolCall.input as any).filePath}`
+          : toolCall.name === 'compact_create_file'
+          ? `Creating new file: ${(toolCall.input as any).filePath}`
+          : `Compressing AST for ${(toolCall.input as any).filePath} (Saving tokens...)`;
         stream.progress(friendlyName);
 
         let toolResult: vscode.LanguageModelToolResult;
@@ -268,6 +281,11 @@ export function activate(context: vscode.ExtensionContext): void {
           } else if (toolCall.name === 'compact_apply_edit') {
             toolResult = await applyEditTool.invoke(
               { ...invOpts, input: toolCall.input as ApplyEditArgs },
+              token,
+            );
+          } else if (toolCall.name === 'compact_create_file') {
+            toolResult = await createFileTool.invoke(
+              { ...invOpts, input: toolCall.input as CreateFileArgs },
               token,
             );
           } else {

@@ -119,6 +119,12 @@ export interface ApplyEditArgs {
   replaceString: string;
 }
 
+/** Arguments for the `compact_create_file` tool. */
+export interface CreateFileArgs {
+  filePath: string;
+  content: string;
+}
+
 // ─── Session Cache ──────────────────────────────────────────────
 
 /**

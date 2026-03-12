@@ -2,7 +2,7 @@ import * as vscode from 'vscode';
 import traverse from '@babel/traverse';
 import { ReactASTCompressor } from './compressor.js';
 import { parse } from './parser.js';
-import type { SearchWorkspaceArgs, ReadAndCompressArgs, ReadExactFunctionArgs, ApplyEditArgs } from './types.js';
+import type { SearchWorkspaceArgs, ReadAndCompressArgs, ReadExactFunctionArgs, ApplyEditArgs, CreateFileArgs } from './types.js';
 import { CompressedFileCache } from './types.js';
 
 // Singleton Output Channel — survives across tool invocations and is never swallowed by esbuild.
@@ -366,6 +366,75 @@ export class ApplyEditTool implements vscode.LanguageModelTool<ApplyEditArgs> {
       new vscode.LanguageModelTextPart(
         `[success] Edit applied to ${relPath}. The file is unsaved — the user can review the change and Ctrl+Z to undo.`,
       ),
+    ]);
+  }
+
+  private errorResult(message: string): vscode.LanguageModelToolResult {
+    return new vscode.LanguageModelToolResult([
+      new vscode.LanguageModelTextPart(`[error] ${message}`),
+    ]);
+  }
+}
+
+// ─── Tool 5: compact_create_file ───────────────────────────────
+
+export class CreateFileTool implements vscode.LanguageModelTool<CreateFileArgs> {
+  async invoke(
+    options: vscode.LanguageModelToolInvocationOptions<CreateFileArgs>,
+    _token: vscode.CancellationToken,
+  ): Promise<vscode.LanguageModelToolResult> {
+    const { filePath, content } = options.input;
+
+    const workspaceFolders = vscode.workspace.workspaceFolders;
+    if (!workspaceFolders || workspaceFolders.length === 0) {
+      return this.errorResult('No workspace folder is open.');
+    }
+
+    const rootUri = workspaceFolders[0].uri;
+    const isAbsolute = /^[a-zA-Z]:[/\\]/.test(filePath) || filePath.startsWith('/');
+    const resolvedUri = isAbsolute
+      ? vscode.Uri.file(filePath)
+      : vscode.Uri.joinPath(rootUri, filePath);
+
+    // Security: ensure the new file stays inside the workspace root
+    const normalize = (p: string) => p.toLowerCase().replace(/\\/g, '/');
+    if (!normalize(resolvedUri.fsPath).startsWith(normalize(rootUri.fsPath))) {
+      return this.errorResult(
+        `"${filePath}" is outside the workspace root. Files can only be created inside the open workspace.`,
+      );
+    }
+
+    // Refuse to overwrite an existing file — use compact_apply_edit for that.
+    try {
+      await vscode.workspace.fs.stat(resolvedUri);
+      return this.errorResult(
+        `File already exists: ${vscode.workspace.asRelativePath(resolvedUri)}. ` +
+        `Use compact_apply_edit to modify existing files.`,
+      );
+    } catch {
+      // stat throws when the file does not exist — that is what we want.
+    }
+
+    // Write the new file to disk
+    try {
+      await vscode.workspace.fs.writeFile(resolvedUri, Buffer.from(content, 'utf-8'));
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      return this.errorResult(`Failed to write file: ${msg}`);
+    }
+
+    // Open the new file in the editor so the user sees it was created
+    const doc = await vscode.workspace.openTextDocument(resolvedUri);
+    await vscode.window.showTextDocument(doc);
+
+    const relPath = vscode.workspace.asRelativePath(resolvedUri);
+    compactLogger.appendLine(`=== CREATE FILE: ${relPath} ===`);
+    compactLogger.appendLine(`[compact] Created new file: ${relPath} (${content.length} bytes)`);
+    compactLogger.appendLine('=================================');
+    compactLogger.show(true);
+
+    return new vscode.LanguageModelToolResult([
+      new vscode.LanguageModelTextPart(`[success] Created ${relPath} and opened it in the editor.`),
     ]);
   }
 
