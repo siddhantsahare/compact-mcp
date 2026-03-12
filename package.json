@@ -4,7 +4,7 @@
   "description": "Context pre-processor and autonomous agent for React. Strip token bloat, fit 3-5x more files into Copilot, and apply autonomous code edits — 100% local and private.",
   "publisher": "compact-labs",
   "icon": "assets/icon.png",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "engines": {
     "vscode": "^1.110.0"
   },
