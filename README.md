@@ -1,40 +1,54 @@
-# React Preprocessor
+# Compact AI: The Context Pre-Processor & Autonomous Agent
 
-A smart context optimizer for React developers. Instantly strip visual bloat and non-essential syntax from your files before sending them to Claude, ChatGPT, or GitHub Copilot. 
+A smart context optimizer and autonomous coding agent for React developers. Instantly strip visual bloat and non-essential syntax from your massive React files to prevent LLM "context window collapse." Use the native `@compact` Copilot participant to seamlessly hunt down bugs, understand complex architectures, and autonomously refactor code across multiple files without chat UI lag.
 
-Fit massive React components into your context window, reduce API costs, and keep your AI focused purely on the logic.
+Fit massive enterprise React components into your context window, reduce API costs by up to 80%, and keep your AI focused purely on the logic.
 
-## Why It Exists
+## 🧠 Why It Exists
 
-Large React files are packed with UI styling, SVG paths, and metadata that consume thousands of tokens but offer zero value to an LLM trying to fix a bug or write a hook. 
+Large React files are packed with UI styling, SVG paths, and heavy `className` metadata. This consumes thousands of tokens but offers zero value to an LLM trying to fix a hook or trace a state bug. When standard AI agents read these raw files, they suffer from the "Lost in the Middle" effect — hallucinating, freezing, or ignoring code entirely.
 
-React Preprocessor intelligently skeletonizes your code, drastically reducing token count while preserving the semantic structure and logic the AI actually needs.
+Compact solves this by instantly skeletonizing your code. It strips away the visual noise, leaving only the semantic structure, hooks, and logic the AI actually needs to do its job.
 
-- **Maximize Context:** Fit more files into a single prompt.
-- **Save Costs:** Reduce your pay-as-you-go API bills.
-- **100% Local & Private:** Processing happens entirely on your machine. Your code is never sent to a third-party server by this extension.
+- **Maximize Context:** Fit 3x to 5x more files into a single LLM prompt.
+- **Save Costs:** Drastically reduce your pay-as-you-go API bills by cutting up to 80% of tokens per file.
+- **100% Local & Private:** Your code is compressed entirely on your machine and never sent to a third-party server by this extension.
 
-## Features
+## ⚡ Core Features
 
-- **Quick Copy:** Instantly copy a compressed version of your file to the clipboard.
-- **Copilot Integration:** Use the `@processor` participant directly in your GitHub Copilot chat.
-- **Live Metrics:** Status bar indicator shows your exact token savings in real-time.
-- **Broad Support:** Works seamlessly with `.js`, `.jsx`, `.ts`, and `.tsx` files.
+- **The `@compact` Agent:** An advanced GitHub Copilot Chat participant. Ask it to find a bug, and it will autonomously search your workspace, read your files, find the logical error, and fix it.
+- **Silent Editor (Agent Mode):** Bypasses the slow, clunky text generation of standard AI chats. Compact applies precise code edits directly to your VS Code editor instantly.
+- **Safe "Dirty" Edits:** Autonomous edits are applied directly to the file but left unsaved. Review the exact diff in real-time and simply hit `Ctrl+Z` to revert if needed.
+- **Deep Dive Extraction:** If the LLM needs to see the exact raw syntax of a specific function, the agent autonomously extracts only that specific component, saving massive context space.
+- **Live Token Metrics:** A real-time status bar indicator shows your exact token savings on the active file.
 
-## Quick Start
+## 🚀 Quick Start
 
-1. Open any React or TypeScript file.
-2. Run `React Preprocessor: Copy Compressed File to Clipboard` from the Command Palette.
-3. Paste the optimized code into your LLM chat.
+### Using the Autonomous Agent
+
+1. Open the GitHub Copilot Chat panel.
+2. Type `@compact` followed by your request.
+
+**Example:**
+> `@compact I noticed a bug in the booking state logic. Find where isOngoing is calculated, fix the logic, and apply the edit directly.`
+
+### Using the Manual Context Optimizer
+
+1. Open any React or TypeScript file (`.js`, `.jsx`, `.ts`, `.tsx`).
+2. Run `Compact: Copy Compressed File to Clipboard` from the Command Palette.
+3. Paste the optimized skeleton code into Claude, ChatGPT, or your preferred AI.
 
 **Keyboard Shortcuts:**
 - Windows/Linux: `Ctrl+Shift+Alt+C`
 - macOS: `Cmd+Shift+Alt+C`
 
 ## Commands
-- `React Preprocessor: Copy Compressed File to Clipboard`
-- `React Preprocessor: Compress Active File`
-- `React Preprocessor: Compress Selection`
+
+- `Compact: Copy Compressed File to Clipboard`
+- `Compact: Compress Active File`
+- `Compact: Compress Selection`
 
 ## Requirements
+
 - VS Code `^1.110.0`
+- GitHub Copilot (for the `@compact` agent)

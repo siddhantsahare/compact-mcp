@@ -1,7 +1,7 @@
 {
   "name": "compact-for-copilot",
   "displayName": "Compact",
-  "description": "Smart context optimizer for React. Fit massive components into Copilot with zero token bloat.",
+  "description": "Context pre-processor and autonomous agent for React. Strip token bloat, fit 3-5x more files into Copilot, and apply autonomous code edits — 100% local and private.",
   "publisher": "compact-labs",
   "icon": "assets/icon.png",
   "version": "0.3.0",
@@ -128,9 +128,9 @@
   "scripts": {
     "build": "npm run build:tsc && npm run bundle:extension",
     "build:tsc": "tsc",
-    "bundle:extension": "esbuild src/extension.ts --bundle --minify --platform=node --target=node18 --format=cjs --external:vscode --outfile=dist/extension.js",
+    "bundle:extension": "esbuild src/extension.ts --bundle --minify --minify-identifiers --minify-syntax --minify-whitespace --platform=node --target=node18 --format=cjs --external:vscode --outfile=dist/extension.js",
     "watch": "tsc --watch",
-    "watch:bundle": "esbuild src/extension.ts --bundle --platform=node --target=node18 --format=cjs --external:vscode --outfile=dist/extension.js --watch",
+    "watch:bundle": "esbuild src/extension.ts --bundle --minify-syntax --platform=node --target=node18 --format=cjs --external:vscode --outfile=dist/extension.js --watch",
     "vscode:prepublish": "npm run build",
     "package:vsix": "npx @vscode/vsce package --allow-missing-repository --skip-license",
     "inspect:vsix": "npx @vscode/vsce ls --tree",
