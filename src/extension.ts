@@ -1,42 +1,36 @@
 import * as vscode from 'vscode';
 import { ReactASTCompressor } from './compressor.js';
-import { SearchWorkspaceTool, ReadAndCompressTool, ReadExactFunctionTool, ApplyEditTool, CreateFileTool } from './tools.js';
+import { SearchWorkspaceTool, ReadAndCompressTool, ReadExactFunctionTool, ReplaceFunctionTool } from './tools.js';
+import type { SearchWorkspaceArgs, ReadAndCompressArgs, ReadExactFunctionArgs, ReplaceFunctionArgs } from './types.js';
 import { CompressedFileCache } from './types.js';
-import type { SearchWorkspaceArgs, ReadAndCompressArgs, ReadExactFunctionArgs, ApplyEditArgs, CreateFileArgs } from './types.js';
 
-const TOOL_CALL_LIMIT = 35;
+const TOOL_CALL_LIMIT = 20;
 
-const SYSTEM_PROMPT = `You are @compact, an expert React architectural assistant embedded in VS Code.
-You have five tools available:
-- compact_search_workspace: search the workspace for files by keyword.
-- compact_read_and_compress: read a file, compress it for minimal token usage, and return its structural skeleton.
-- compact_read_exact_function: extract the complete, raw, uncompressed source of a specific named function or component from a file.
-- compact_apply_edit: silently apply a search-and-replace edit directly to the user's file in the IDE.
-- compact_create_file: create a brand new file in the workspace and open it in the editor.
+const SYSTEM_PROMPT = `You are @compact, an elite React context optimizer embedded in VS Code.
+You have four tools:
+- compact_search_workspace: find React/TS files in the workspace by keyword or component name.
+- compact_read_and_compress: read a file and return its compressed AST skeleton (saves 50-80% tokens). Use this first for every file to understand structure cheaply.
+- compact_read_exact_function: extract the raw, uncompressed source of one specific named function or component. ALWAYS call this before modifying any function.
+- compact_replace_function: AST-aware surgical replacement. Provide the functionName and your complete newCode — Babel finds the exact byte range of that function in the file and splices your new code in, leaving every other line in the file completely untouched. The file is left unsaved so the user can review the diff.
 
-The compressed output safely removes UI boilerplate and inlines trivial JSX while preserving all core logic, state, hooks, and component structure — so you get full architectural understanding at a fraction of the token cost.
+YOUR ROLE: Find the problem, read the raw code, fix it, and apply the fix autonomously using compact_replace_function.
 
-YOUR DIRECTIVES:
+WORKFLOW — follow this every time:
+1. If the file path is unknown, use compact_search_workspace with a keyword from the user's request.
+2. Use compact_read_and_compress to get the compressed AST skeleton and understand the file structure cheaply.
+3. Identify the exact function or component that needs to change.
+4. Use compact_read_exact_function to get the real, uncompressed source of that function.
+5. Fix the code, then call compact_replace_function with the complete updated function.
+   - newCode must be the ENTIRE function body — not a partial diff, not a snippet.
+   - NEVER use placeholders like "// ... existing code ..."
+   - If multiple functions need changing, call compact_replace_function once per function.
+6. After all replacements succeed, write a short confirmation message. Tell the user the file is unsaved so they can review the diff and Ctrl+S to save or Ctrl+Z to undo.
 
-1. Act as a conversational coding assistant. Use the compressed AST context to answer the user's questions about the codebase architecture, data flow, and logic.
-2. DO NOT rewrite an entire file unless the user explicitly asks you to rewrite or regenerate it.
-3. If a specific element seems missing from the compressed view, say so and ask the user to clarify — never guess at code you cannot see.
-4. Do NOT ask the user to paste code — use your tools to find and read it yourself.
-
-OUTPUT MODES — You have two ways to write code:
-
-📝 READ / MARKDOWN MODE (default):
-If the user asks for an explanation, a snippet, or a standard change, output surgical Markdown code blocks with 2-3 lines of unchanged context above and below the change so the IDE can locate the exact replacement position. NEVER use placeholders like "// ... existing code ...", "/* ... other JSX ... */", or "// ... rest of function". VS Code's native "Apply in Editor" button will handle the diff. Use fenced code blocks with the correct language tag (tsx, ts, jsx, js) and start the block with a comment showing the file path. Output ONLY the changed function/component — not the whole file.
-
-🤖 AUTONOMOUS AGENT MODE (silent editor):
-If the user explicitly asks you to "edit the file directly", "act autonomously", "apply the fix", "make the change", or similar action-oriented instructions, DO NOT output Markdown code blocks. Instead, silently call the compact_apply_edit tool with the precise searchString (the exact existing code) and replaceString (the new code). The file will be left unsaved so the user can review and Ctrl+Z to undo. After the tool succeeds, output only a brief conversational confirmation (e.g., "Done — I've updated [function] in [file]. The file is unsaved so you can review the change.").
-
-THE HUNT-AND-PATCH LOOP:
-Remember, you are a master of context. Autonomously use compact_read_and_compress to find your way around the codebase, use compact_read_exact_function to zoom in on the specific function or component, and then use your chosen output mode to execute the fix. If asked to modify a specific component or function but it is skeletonized or hidden in your compressed view:
-- DO NOT give up. DO NOT output placeholder code.
-- Autonomously call compact_read_exact_function with the file path and the exact target function name.
-- Once you receive the uncompressed source, write the precise edit.
-- Only if the function is still not found after calling the tool should you tell the user it cannot be located.
+IMPORTANT RULES:
+- Do NOT ask the user to paste code. Use your tools.
+- Do NOT guess at code you cannot see. Call compact_read_exact_function first.
+- Do NOT output Markdown code blocks for edits — call compact_replace_function instead.
+- compact_replace_function is mathematically safe: it only touches the exact bytes of the target function. It cannot break surrounding JSX or unrelated code.
 `;
 
 export function activate(context: vscode.ExtensionContext): void {
@@ -71,24 +65,29 @@ export function activate(context: vscode.ExtensionContext): void {
   updateStatusBar();
 
   // ─── LM Tool Registration ────────────────────────────────────
-  // Keep instances so we can call .invoke() directly in the chat loop,
-  // bypassing invokeTool's manifest-contribution check entirely.
+  // These tools are exposed to native Copilot as context middleware.
+  // Native Copilot handles all file editing — we only provide compressed context.
   const initialCache = new CompressedFileCache();
   const searchToolInstance = new SearchWorkspaceTool();
   const readAndCompressTool = new ReadAndCompressTool(initialCache);
   const readExactFunctionTool = new ReadExactFunctionTool();
-  const applyEditTool = new ApplyEditTool();
-  const createFileTool = new CreateFileTool();
+  const replaceFunctionTool = new ReplaceFunctionTool();
 
   context.subscriptions.push(
     vscode.lm.registerTool('compact_search_workspace', searchToolInstance),
     vscode.lm.registerTool('compact_read_and_compress', readAndCompressTool),
     vscode.lm.registerTool('compact_read_exact_function', readExactFunctionTool),
-    vscode.lm.registerTool('compact_apply_edit', applyEditTool),
-    vscode.lm.registerTool('compact_create_file', createFileTool),
+    vscode.lm.registerTool('compact_replace_function', replaceFunctionTool),
   );
 
-  // ─── Chat Participant: @compact ───────────────────────────────
+  // ─── Diagnostic command ──────────────────────────────────────
+  const diagCmd = vscode.commands.registerCommand('compact.diagnostics', () => {
+    const registered = vscode.lm.tools.map((t) => t.name).join(', ');
+    vscode.window.showInformationMessage(`Compact tools registered: ${registered || '(none)'}`);
+  });
+  context.subscriptions.push(diagCmd);
+
+  // ─── Chat Participant: @compact (read-only context provider) ──
   const participant = vscode.chat.createChatParticipant(
     'compact-for-copilot.compact',
     chatHandler,
@@ -101,13 +100,9 @@ export function activate(context: vscode.ExtensionContext): void {
     stream: vscode.ChatResponseStream,
     token: vscode.CancellationToken,
   ): Promise<void> {
-    // Fresh cache per chat turn
     readAndCompressTool.resetCache(new CompressedFileCache());
-
-    // ── Use the user's selected UI model ────────────────
     const model = request.model;
 
-    // ── Build initial messages ─────────────────────────────────
     const messages: vscode.LanguageModelChatMessage[] = [
       vscode.LanguageModelChatMessage.User(SYSTEM_PROMPT),
       vscode.LanguageModelChatMessage.User(request.prompt),
@@ -116,99 +111,56 @@ export function activate(context: vscode.ExtensionContext): void {
     const tools: vscode.LanguageModelChatTool[] = [
       {
         name: 'compact_search_workspace',
-        description: 'Search the workspace for React component and hook files matching a keyword. Returns a list of matching file paths.',
+        description: 'Search the workspace for React/TypeScript files matching a keyword.',
         inputSchema: {
           type: 'object',
           properties: {
-            keyword: {
-              type: 'string',
-              description: 'A filename keyword or glob fragment to search for (e.g. "Button", "useAuth", "Header").',
-            },
+            keyword: { type: 'string', description: 'Filename keyword or fragment (e.g. "Button", "useAuth").' },
           },
           required: ['keyword'],
         },
       },
       {
         name: 'compact_read_and_compress',
-        description: 'Read a React/TypeScript file from the workspace, intelligently compress it for minimal token usage, and return the optimised source.',
+        description: 'Read and compress a React/TS file into a token-efficient AST skeleton.',
         inputSchema: {
           type: 'object',
           properties: {
-            filePath: {
-              type: 'string',
-              description: 'Workspace-relative path to the file to read and compress (e.g. "src/components/Button.tsx").',
-            },
+            filePath: { type: 'string', description: 'Workspace-relative path to the file.' },
           },
           required: ['filePath'],
         },
       },
       {
         name: 'compact_read_exact_function',
-        description: 'Extract the complete, uncompressed, raw source code of a specific named function or component from a file. Use this when the compressed skeleton is not enough to safely edit a function.',
+        description: 'Extract the raw uncompressed source of a specific named function or component. Always call this before replacing any function.',
         inputSchema: {
           type: 'object',
           properties: {
-            filePath: {
-              type: 'string',
-              description: 'Workspace-relative path to the file (e.g. "src/components/BookingListItem.tsx").',
-            },
-            functionName: {
-              type: 'string',
-              description: 'The exact name of the function, component, or variable to extract (e.g. "BookingListItem", "handleSubmit", "RequestSentMessage").',
-            },
+            filePath: { type: 'string', description: 'Workspace-relative path to the file.' },
+            functionName: { type: 'string', description: 'Exact name of the function or component.' },
           },
           required: ['filePath', 'functionName'],
         },
       },
       {
-        name: 'compact_apply_edit',
-        description: 'Silently applies a search-and-replace edit directly to the user\'s file in the IDE. The file is left unsaved so the user can review and undo. Use this in Autonomous Agent Mode when the user asks you to directly edit, apply a fix, or act autonomously.',
+        name: 'compact_replace_function',
+        description: 'AST-aware surgical replacement. Babel finds the exact byte range of functionName in the file and splices newCode in. Only the target function is touched — zero collateral damage to surrounding code or JSX. The file is left unsaved for review.',
         inputSchema: {
           type: 'object',
           properties: {
-            filePath: {
-              type: 'string',
-              description: 'Workspace-relative path to the file to edit (e.g. "src/components/Button.tsx").',
-            },
-            searchString: {
-              type: 'string',
-              description: 'The exact existing code to be replaced. Must match the file content exactly (whitespace, line breaks, etc.) and appear only once.',
-            },
-            replaceString: {
-              type: 'string',
-              description: 'The new code to replace the searchString with.',
-            },
+            filePath: { type: 'string', description: 'Workspace-relative path to the file to edit.' },
+            functionName: { type: 'string', description: 'Exact name of the function or component to replace.' },
+            newCode: { type: 'string', description: 'The complete, final replacement source for the entire function. Must not use placeholders.' },
           },
-          required: ['filePath', 'searchString', 'replaceString'],
-        },
-      },
-      {
-        name: 'compact_create_file',
-        description: 'Creates a brand-new file at the given workspace-relative path with the provided content, then opens it in the editor. Never overwrites an existing file — use compact_apply_edit for that.',
-        inputSchema: {
-          type: 'object',
-          properties: {
-            filePath: {
-              type: 'string',
-              description: 'Workspace-relative path for the new file (e.g. "src/utils/bookingHelpers.ts"). Must not already exist.',
-            },
-            content: {
-              type: 'string',
-              description: 'The full source code content to write into the new file.',
-            },
-          },
-          required: ['filePath', 'content'],
+          required: ['filePath', 'functionName', 'newCode'],
         },
       },
     ];
 
-    // ── Agentic tool-calling loop ──────────────────────────────
     let toolCallCount = 0;
-
     while (!token.isCancellationRequested) {
       const response = await model.sendRequest(messages, { tools }, token);
-
-      // Collect all parts from the stream
       const toolCalls: vscode.LanguageModelToolCallPart[] = [];
       let textAccumulator = '';
 
@@ -221,21 +173,14 @@ export function activate(context: vscode.ExtensionContext): void {
         }
       }
 
-      // If no tool calls were made, the model is done
-      if (toolCalls.length === 0) {
-        break;
-      }
+      if (toolCalls.length === 0) break;
 
-      // Check the hard tool-call limit
       toolCallCount += toolCalls.length;
       if (toolCallCount > TOOL_CALL_LIMIT) {
-        stream.markdown(
-          '\n\n---\n⚠️ Tool-call limit reached. Returning what I have so far.',
-        );
+        stream.markdown('\n\n---\n⚠️ Tool-call limit reached.');
         break;
       }
 
-      // Add assistant response with tool calls to message history
       messages.push(
         vscode.LanguageModelChatMessage.Assistant(
           textAccumulator
@@ -244,50 +189,32 @@ export function activate(context: vscode.ExtensionContext): void {
         ),
       );
 
-      // Execute each tool call and feed results back
       for (const toolCall of toolCalls) {
-        // Show the user which tool is running
-        const friendlyName = toolCall.name === 'compact_search_workspace'
-          ? `Searching workspace for "${(toolCall.input as any).keyword}"`
-          : toolCall.name === 'compact_read_exact_function'
-          ? `Extracting raw source of "${(toolCall.input as any).functionName}"`
-          : toolCall.name === 'compact_apply_edit'
-          ? `Applying silent patch to ${(toolCall.input as any).filePath}`
-          : toolCall.name === 'compact_create_file'
-          ? `Creating new file: ${(toolCall.input as any).filePath}`
-          : `Compressing AST for ${(toolCall.input as any).filePath} (Saving tokens...)`;
-        stream.progress(friendlyName);
+        const label =
+          toolCall.name === 'compact_search_workspace'
+            ? `Searching for "${(toolCall.input as SearchWorkspaceArgs).keyword}"`
+            : toolCall.name === 'compact_read_exact_function'
+            ? `Extracting raw source of "${(toolCall.input as ReadExactFunctionArgs).functionName}"`
+            : toolCall.name === 'compact_replace_function'
+            ? `Replacing "${(toolCall.input as ReplaceFunctionArgs).functionName}" in ${(toolCall.input as ReplaceFunctionArgs).filePath}`
+            : `Compressing ${(toolCall.input as ReadAndCompressArgs).filePath}`;
+        stream.progress(label);
 
         let toolResult: vscode.LanguageModelToolResult;
         try {
-          // Call our own tool instances directly — avoids invokeTool's hard
-          // requirement that the tool be formally contributed in package.json.
           const invOpts = { toolInvocationToken: request.toolInvocationToken };
           if (toolCall.name === 'compact_search_workspace') {
             toolResult = await searchToolInstance.invoke(
-              { ...invOpts, input: toolCall.input as SearchWorkspaceArgs },
-              token,
-            );
+              { ...invOpts, input: toolCall.input as SearchWorkspaceArgs }, token);
           } else if (toolCall.name === 'compact_read_and_compress') {
             toolResult = await readAndCompressTool.invoke(
-              { ...invOpts, input: toolCall.input as ReadAndCompressArgs },
-              token,
-            );
+              { ...invOpts, input: toolCall.input as ReadAndCompressArgs }, token);
           } else if (toolCall.name === 'compact_read_exact_function') {
             toolResult = await readExactFunctionTool.invoke(
-              { ...invOpts, input: toolCall.input as ReadExactFunctionArgs },
-              token,
-            );
-          } else if (toolCall.name === 'compact_apply_edit') {
-            toolResult = await applyEditTool.invoke(
-              { ...invOpts, input: toolCall.input as ApplyEditArgs },
-              token,
-            );
-          } else if (toolCall.name === 'compact_create_file') {
-            toolResult = await createFileTool.invoke(
-              { ...invOpts, input: toolCall.input as CreateFileArgs },
-              token,
-            );
+              { ...invOpts, input: toolCall.input as ReadExactFunctionArgs }, token);
+          } else if (toolCall.name === 'compact_replace_function') {
+            toolResult = await replaceFunctionTool.invoke(
+              { ...invOpts, input: toolCall.input as ReplaceFunctionArgs }, token);
           } else {
             toolResult = new vscode.LanguageModelToolResult([
               new vscode.LanguageModelTextPart(`[error] Unknown tool: ${toolCall.name}`),
@@ -295,7 +222,6 @@ export function activate(context: vscode.ExtensionContext): void {
           }
         } catch (err) {
           const msg = err instanceof Error ? err.message : String(err);
-          stream.markdown(`\n> ⚠️ Tool \`${toolCall.name}\` threw: ${msg}\n`);
           toolResult = new vscode.LanguageModelToolResult([
             new vscode.LanguageModelTextPart(`[tool error] ${msg}`),
           ]);
@@ -309,6 +235,8 @@ export function activate(context: vscode.ExtensionContext): void {
       }
     }
   }
+
+  context.subscriptions.push(participant);
 
   // ─── Command: Compress Active File ────────────────────────────
   const compressCmd = vscode.commands.registerCommand(
@@ -402,7 +330,7 @@ export function activate(context: vscode.ExtensionContext): void {
     },
   );
 
-  context.subscriptions.push(participant, compressCmd, compressSelCmd, copyCompressedCmd);
+  context.subscriptions.push(compressCmd, compressSelCmd, copyCompressedCmd);
 }
 
 export function deactivate(): void {}

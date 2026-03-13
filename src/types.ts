@@ -112,6 +112,13 @@ export interface ReadExactFunctionArgs {
   functionName: string;
 }
 
+/** Arguments for the `compact_replace_function` tool. */
+export interface ReplaceFunctionArgs {
+  filePath: string;
+  functionName: string;
+  newCode: string;
+}
+
 /** Arguments for the `compact_apply_edit` tool. */
 export interface ApplyEditArgs {
   filePath: string;

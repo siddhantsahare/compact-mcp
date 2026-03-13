@@ -2,11 +2,11 @@ import * as vscode from 'vscode';
 import traverse from '@babel/traverse';
 import { ReactASTCompressor } from './compressor.js';
 import { parse } from './parser.js';
-import type { SearchWorkspaceArgs, ReadAndCompressArgs, ReadExactFunctionArgs, ApplyEditArgs, CreateFileArgs } from './types.js';
+import type { SearchWorkspaceArgs, ReadAndCompressArgs, ReadExactFunctionArgs, ReplaceFunctionArgs, ApplyEditArgs, CreateFileArgs } from './types.js';
 import { CompressedFileCache } from './types.js';
 
 // Singleton Output Channel — survives across tool invocations and is never swallowed by esbuild.
-const compactLogger = vscode.window.createOutputChannel('Compact Debug');
+// (kept for critical error surfacing only; debug logging removed for release builds)
 
 // ─── Tool 1: compact_search_workspace ───────────────────────────
 
@@ -115,29 +115,6 @@ export class ReadAndCompressTool implements vscode.LanguageModelTool<ReadAndComp
     }
 
     const compressedCode = result.compressed;
-    const activeRules = Object.entries(this.compressor.options)
-      .filter(([, enabled]) => enabled)
-      .map(([name]) => name)
-      .sort();
-    const disabledRules = Object.entries(this.compressor.options)
-      .filter(([, enabled]) => !enabled)
-      .map(([name]) => name)
-      .sort();
-
-    compactLogger.appendLine('=== RAW COMPRESSED AST OUTPUT ===');
-    compactLogger.appendLine(`[compact] file: ${relPath}`);
-    compactLogger.appendLine(
-      `[compact] tokens: ${result.originalTokens} -> ${result.compressedTokens} (${result.savingsPercent}% saved)`,
-    );
-    compactLogger.appendLine(
-      `[compact] rules: active=${activeRules.length}${activeRules.length > 0 ? ` [${activeRules.join(', ')}]` : ''}` +
-      `${disabledRules.length > 0 ? ` | disabled=${disabledRules.length} [${disabledRules.join(', ')}]` : ''}`,
-    );
-    compactLogger.appendLine('--- compressed payload start ---');
-    compactLogger.appendLine(compressedCode);
-    compactLogger.appendLine('--- compressed payload end ---');
-    compactLogger.appendLine('=================================');
-    compactLogger.show(true); // reveal panel without stealing focus
 
     this.cache.add(relPath);
 
@@ -253,11 +230,6 @@ export class ReadExactFunctionTool implements vscode.LanguageModelTool<ReadExact
       );
     }
 
-    compactLogger.appendLine(`=== EXACT FUNCTION EXTRACT: ${functionName} from ${relPath} ===`);
-    compactLogger.appendLine(extractedCode);
-    compactLogger.appendLine('=================================================================');
-    compactLogger.show(true);
-
     return new vscode.LanguageModelToolResult([
       new vscode.LanguageModelTextPart(
         `── UNCOMPRESSED SOURCE: ${functionName} (from ${relPath}) ──\n${extractedCode}`,
@@ -272,7 +244,121 @@ export class ReadExactFunctionTool implements vscode.LanguageModelTool<ReadExact
   }
 }
 
-// ─── Tool 4: compact_apply_edit ─────────────────────────────────
+// ─── Tool 4: compact_replace_function ──────────────────────────
+// AST-aware byte-splice replacement. Uses Babel's exact node.start / node.end
+// positions to surgically swap one function without touching any other code.
+
+export class ReplaceFunctionTool implements vscode.LanguageModelTool<ReplaceFunctionArgs> {
+  async invoke(
+    options: vscode.LanguageModelToolInvocationOptions<ReplaceFunctionArgs>,
+    _token: vscode.CancellationToken,
+  ): Promise<vscode.LanguageModelToolResult> {
+    const { filePath, functionName, newCode } = options.input;
+
+    const workspaceFolders = vscode.workspace.workspaceFolders;
+    if (!workspaceFolders || workspaceFolders.length === 0) {
+      return this.errorResult('No workspace folder is open.');
+    }
+
+    const rootUri = workspaceFolders[0].uri;
+    const isAbsolute = /^[a-zA-Z]:[/\\]/.test(filePath) || filePath.startsWith('/');
+    const resolvedUri = isAbsolute
+      ? vscode.Uri.file(filePath)
+      : vscode.Uri.joinPath(rootUri, filePath);
+
+    // Security: file must be inside the workspace root
+    const normalize = (p: string) => p.toLowerCase().replace(/\\/g, '/');
+    if (!normalize(resolvedUri.fsPath).startsWith(normalize(rootUri.fsPath))) {
+      return this.errorResult(`"${filePath}" is outside the workspace root.`);
+    }
+
+    let fileBytes: Uint8Array;
+    try {
+      fileBytes = await vscode.workspace.fs.readFile(resolvedUri);
+    } catch {
+      return this.errorResult(`File not found: ${filePath}`);
+    }
+
+    const originalCode = Buffer.from(fileBytes).toString('utf-8');
+    const relPath = vscode.workspace.asRelativePath(resolvedUri);
+
+    // ── Find the exact byte range of the target function via Babel AST ──
+    let nodeStart: number | null = null;
+    let nodeEnd: number | null = null;
+
+    try {
+      const ast = parse(originalCode);
+      traverse(ast, {
+        FunctionDeclaration(path) {
+          if (path.node.id?.name === functionName) {
+            nodeStart = path.node.start ?? null;
+            nodeEnd = path.node.end ?? null;
+            path.stop();
+          }
+        },
+        VariableDeclarator(path) {
+          const id = path.node.id;
+          if (id.type === 'Identifier' && id.name === functionName) {
+            nodeStart = path.parent.start ?? null;
+            nodeEnd = path.parent.end ?? null;
+            path.stop();
+          }
+        },
+        ExportDefaultDeclaration(path) {
+          const decl = path.node.declaration;
+          if (
+            decl.type === 'FunctionDeclaration' &&
+            (decl.id?.name === functionName || functionName === 'default')
+          ) {
+            nodeStart = path.node.start ?? null;
+            nodeEnd = path.node.end ?? null;
+            path.stop();
+          }
+        },
+      });
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      return this.errorResult(`AST parse error on ${relPath}: ${msg}`);
+    }
+
+    if (nodeStart === null || nodeEnd === null) {
+      return this.errorResult(
+        `Could not find "${functionName}" in ${relPath}. ` +
+        `Use compact_read_exact_function first to confirm the exact name.`,
+      );
+    }
+
+    // ── Byte-splice: replace only [nodeStart, nodeEnd), touch nothing else ──
+    const newFileContent =
+      originalCode.slice(0, nodeStart) +
+      newCode.trimEnd() +
+      originalCode.slice(nodeEnd);
+
+    // Write via workspace edit so the file is left UNSAVED (user can review + Ctrl+Z)
+    const workspaceEdit = new vscode.WorkspaceEdit();
+    const fullRange = new vscode.Range(
+      new vscode.Position(0, 0),
+      positionFromOffset(originalCode, originalCode.length),
+    );
+    workspaceEdit.replace(resolvedUri, fullRange, newFileContent);
+    await vscode.workspace.applyEdit(workspaceEdit);
+
+    return new vscode.LanguageModelToolResult([
+      new vscode.LanguageModelTextPart(
+        `✅ Replaced "${functionName}" in ${relPath}. ` +
+        `The file is unsaved — review the diff and press Ctrl+S to save (or Ctrl+Z to undo).`,
+      ),
+    ]);
+  }
+
+  private errorResult(message: string): vscode.LanguageModelToolResult {
+    return new vscode.LanguageModelToolResult([
+      new vscode.LanguageModelTextPart(`[error] ${message}`),
+    ]);
+  }
+}
+
+// ─── Tool 5 (legacy): compact_apply_edit ─────────────────────────────────
 
 export class ApplyEditTool implements vscode.LanguageModelTool<ApplyEditArgs> {
   async invoke(
@@ -357,10 +443,6 @@ export class ApplyEditTool implements vscode.LanguageModelTool<ApplyEditArgs> {
     }
 
     const relPath = vscode.workspace.asRelativePath(resolvedUri);
-    compactLogger.appendLine(`=== APPLY EDIT: ${relPath} ===`);
-    compactLogger.appendLine(`[compact] Replaced chars at real offset ${realStartIndex}–${realEndIndex}`);
-    compactLogger.appendLine('=================================');
-    compactLogger.show(true);
 
     return new vscode.LanguageModelToolResult([
       new vscode.LanguageModelTextPart(
@@ -428,10 +510,6 @@ export class CreateFileTool implements vscode.LanguageModelTool<CreateFileArgs> 
     await vscode.window.showTextDocument(doc);
 
     const relPath = vscode.workspace.asRelativePath(resolvedUri);
-    compactLogger.appendLine(`=== CREATE FILE: ${relPath} ===`);
-    compactLogger.appendLine(`[compact] Created new file: ${relPath} (${content.length} bytes)`);
-    compactLogger.appendLine('=================================');
-    compactLogger.show(true);
 
     return new vscode.LanguageModelToolResult([
       new vscode.LanguageModelTextPart(`[success] Created ${relPath} and opened it in the editor.`),

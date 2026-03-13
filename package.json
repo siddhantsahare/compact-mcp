@@ -4,7 +4,7 @@
   "description": "Context pre-processor and autonomous agent for React. Strip token bloat, fit 3-5x more files into Copilot, and apply autonomous code edits — 100% local and private.",
   "publisher": "compact-labs",
   "icon": "assets/icon.png",
-  "version": "0.4.0",
+  "version": "0.5.0",
   "engines": {
     "vscode": "^1.110.0"
   },
@@ -12,7 +12,7 @@
     "Other"
   ],
   "activationEvents": [
-    "onChatParticipant:compact-for-copilot.compact"
+    "onStartupFinished"
   ],
   "main": "./dist/extension.js",
   "bin": {
@@ -23,14 +23,16 @@
       {
         "id": "compact-for-copilot.compact",
         "name": "compact",
-        "description": "Autonomous React assistant — safely optimizes workspace files and streams precise fixes.",
-        "isSticky": true
+        "description": "Reads and compresses React files to save tokens. Type @compact <your request> — it will provide token-efficient context and exact code suggestions for Copilot to apply.",
+        "isSticky": false
       }
     ],
     "languageModelTools": [
       {
         "name": "compact_search_workspace",
         "tags": ["compact"],
+        "toolReferenceName": "compact_search",
+        "canBeReferencedInPrompt": true,
         "description": "Search the workspace for React component and hook files matching a keyword. Returns a list of matching file paths.",
         "inputSchema": {
           "type": "object",
@@ -46,7 +48,9 @@
       {
         "name": "compact_read_and_compress",
         "tags": ["compact"],
-        "description": "Read a React/TypeScript file from the workspace, intelligently compress it for minimal token usage, and return the optimised source. Use this to understand a file's structure and logic efficiently.",
+        "toolReferenceName": "compact",
+        "canBeReferencedInPrompt": true,
+        "description": "Read a React/TypeScript file and return a compressed AST skeleton to understand structure with minimal tokens. CRITICAL: The output is compressed — do NOT generate file patches or edits based on this output. To edit a function, you MUST first call compact_read_exact_function to get the real uncompressed source, then use your native edit tools.",
         "inputSchema": {
           "type": "object",
           "properties": {
@@ -61,7 +65,9 @@
       {
         "name": "compact_read_exact_function",
         "tags": ["compact"],
-        "description": "Extracts the complete, uncompressed, raw source code of a specific named function or component from a file. Use this when the compressed skeleton is not enough to safely edit a function.",
+        "toolReferenceName": "compact_zoom",
+        "canBeReferencedInPrompt": true,
+        "description": "Extracts the complete, uncompressed, raw source code of a specific named function or component from a file. ALWAYS call this before editing any function — never write patches based on the compressed output from compact_read_and_compress.",
         "inputSchema": {
           "type": "object",
           "properties": {
@@ -75,6 +81,29 @@
             }
           },
           "required": ["filePath", "functionName"]
+        }
+      },
+      {
+        "name": "compact_replace_function",
+        "tags": ["compact"],
+        "description": "AST-aware surgical replacement. Uses Babel to find the exact byte range of a named function and splice in new code. Only the target function is touched — zero collateral damage to surrounding code or JSX. File is left unsaved for review.",
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "filePath": {
+              "type": "string",
+              "description": "Workspace-relative path to the file to edit."
+            },
+            "functionName": {
+              "type": "string",
+              "description": "Exact name of the function or component to replace."
+            },
+            "newCode": {
+              "type": "string",
+              "description": "The complete replacement source for the entire function. No placeholders."
+            }
+          },
+          "required": ["filePath", "functionName", "newCode"]
         }
       }
     ],
