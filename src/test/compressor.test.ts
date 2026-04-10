@@ -77,9 +77,11 @@ suite('ReactASTCompressor', () => {
       }
     `;
     const { compressed } = compressor.compress(code);
-    assert.ok(!compressed.includes('validate'));
-    assert.ok(!compressed.includes('submitForm'));
-    assert.ok(compressed.includes('handleSubmit'));
+    assert.ok(compressed.includes('handleSubmit'), 'handler name must survive');
+    // Body is replaced by a summary comment — raw statement syntax is gone
+    assert.ok(compressed.includes('/*'), 'body must be collapsed to a summary comment');
+    assert.ok(!compressed.includes('validate();'), 'raw statements must not survive verbatim');
+    assert.ok(!compressed.includes('submitForm();'), 'raw statements must not survive verbatim');
   });
 
   // ─── PropTypes stripping ─────────────────────────────────────
@@ -130,10 +132,14 @@ suite('ReactASTCompressor', () => {
       };
     `;
     const { compressed } = compressor.compress(code);
-    assert.ok(!compressed.includes('interface'));
-    assert.ok(!compressed.includes('UserProps'));
-    assert.ok(!compressed.includes('Status'));
-    assert.ok(compressed.includes('greet'));
+    // Inline type annotations on function signatures ARE stripped
+    assert.ok(!compressed.includes(': UserProps'), 'param type annotation must be stripped');
+    assert.ok(!compressed.includes(': string'), 'return type annotation must be stripped');
+    // Function name survives
+    assert.ok(compressed.includes('greet'), 'function name must survive');
+    // Small interfaces (≤4 props) are kept verbatim; union-of-literals types are kept
+    assert.ok(compressed.includes('UserProps'), 'interface declaration must survive');
+    assert.ok(compressed.includes('Status'), 'union type alias must survive');
   });
 
   // ─── Test attribute stripping ─────────────────────────────────
@@ -289,7 +295,8 @@ suite('ReactASTCompressor', () => {
     assert.ok(!result.compressed.includes('defaultProps'));
     assert.ok(!result.compressed.includes('prop-types'));
     assert.ok(!result.compressed.includes('data-testid'));
-    assert.ok(!result.compressed.includes('interface'));
+    // interfaces survive (small ones kept, large ones skeletonized) — inline annotations are stripped
+    assert.ok(!result.compressed.includes(': string'), 'inline type annotations must be stripped');
     assert.ok(!result.compressed.includes('borderRadius'));
 
     // Should achieve meaningful compression

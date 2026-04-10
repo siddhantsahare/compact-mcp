@@ -34,7 +34,7 @@ jobs:
         run: npm run build
 
       - name: Run tests
-        run: node --test dist/test/**/*.test.js
+        run: npm test
 
   lint:
     name: Lint

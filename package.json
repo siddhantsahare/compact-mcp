@@ -16,7 +16,7 @@
     "publish:mcp": "npm run build:mcp && cp -r dist compact-mcp-publish/dist && cd compact-mcp-publish && npm publish --access public",
     "watch": "tsc --watch",
     "lint": "eslint src/",
-    "test": "tsc && node --test dist/test/**/*.test.js"
+    "test": "tsc && mocha --ui tdd dist/test/**/*.test.js"
   },
   "dependencies": {
     "@babel/generator": "^7.22.5",
@@ -35,6 +35,7 @@
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
     "eslint": "^9.39.3",
+    "mocha": "^11.0.0",
     "typescript": "^5.9.3",
     "typescript-eslint": "^8.58.1"
   }

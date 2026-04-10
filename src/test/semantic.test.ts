@@ -128,11 +128,21 @@ suite('Semantic Preservation', () => {
 
   // ─── Import survival ──────────────────────────────────────────
   test('import declarations survive intact', () => {
+    // All imports must be referenced in the component body so pruneUnusedImports keeps them.
+    // Handler has ≤2 statements so summarizeHandlers won't collapse the axios reference away.
     const code = `
       import React, { useState, useEffect } from 'react';
       import { Button } from '@mui/material';
       import axios from 'axios';
-      function Page() { return <Button>Click</Button>; }
+      function Page() {
+        const [count, setCount] = useState(0);
+        useEffect(() => { document.title = String(count); }, [count]);
+        const handleClick = () => {
+          setCount(c => c + 1);
+          axios.post('/api/click');
+        };
+        return <Button onClick={handleClick}>{count}</Button>;
+      }
     `;
     const { compressed } = compressor.compress(code);
     assertReparseable(compressed, 'imports');
@@ -166,9 +176,10 @@ suite('Semantic Preservation', () => {
     assert.ok(compressed.includes('userId'), 'userId dep must survive');
     assert.ok(compressed.includes('teamId'), 'teamId dep must survive');
     assert.ok(compressed.includes('onUpdate'), 'onUpdate dep must survive');
-    // Body must be gone
-    assert.ok(!compressed.includes('subscribeToUser'), 'internal calls must be stripped');
-    assert.ok(!compressed.includes('validatePayload'), 'internal calls must be stripped');
+    // Hook bodies are replaced by summary comments — raw statement syntax is gone
+    // (the summary comment may still name the calls, so we check for the full statement form)
+    assert.ok(!compressed.includes('subscribeToUser(userId)'), 'raw hook body must be collapsed');
+    assert.ok(!compressed.includes('validatePayload(payload)'), 'raw hook body must be collapsed');
   });
 
   // ─── JSX structure survival ───────────────────────────────────

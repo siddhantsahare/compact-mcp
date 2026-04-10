@@ -48,33 +48,44 @@ export class ReactASTCompressor {
 
   /** Compress React source code by applying all enabled pruning rules. */
   compress(code: string): CompressResult {
-    const ast = parse(code);
-
-    for (const [name, rule] of this.rules) {
-      if (this.options[name]) {
-        rule(ast);
-      }
-    }
-
-    const output = generate(ast, {
-      comments: true,
-      concise: true,
-      retainLines: false,
-    });
-
     const originalTokens = countTokens(code);
-    const compressedTokens = countTokens(output.code);
-    const savingsPercent =
-      originalTokens > 0
-        ? Math.round(((originalTokens - compressedTokens) / originalTokens) * 100)
-        : 0;
 
-    return {
-      compressed: output.code,
-      originalTokens,
-      compressedTokens,
-      savingsPercent,
-    };
+    try {
+      const ast = parse(code);
+
+      for (const [name, rule] of this.rules) {
+        if (this.options[name]) {
+          rule(ast);
+        }
+      }
+
+      const output = generate(ast, {
+        comments: true,
+        concise: true,
+        retainLines: false,
+      });
+
+      const compressedTokens = countTokens(output.code);
+      const savingsPercent =
+        originalTokens > 0
+          ? Math.round(((originalTokens - compressedTokens) / originalTokens) * 100)
+          : 0;
+
+      return {
+        compressed: output.code,
+        originalTokens,
+        compressedTokens,
+        savingsPercent,
+      };
+    } catch {
+      // Malformed input — return original unmodified rather than throwing
+      return {
+        compressed: code,
+        originalTokens,
+        compressedTokens: originalTokens,
+        savingsPercent: 0,
+      };
+    }
   }
 
   /** Exact BPE token count. */
