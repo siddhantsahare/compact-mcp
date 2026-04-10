@@ -1,0 +1,9 @@
+{
+  "mcpServers": {
+    "compact": {
+      "command": "node",
+      "args": ["dist/mcp/index.js"]
+    }
+  }
+}
+

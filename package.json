@@ -6,7 +6,8 @@
   "icon": "assets/icon.png",
   "version": "0.5.0",
   "engines": {
-    "vscode": "^1.110.0"
+    "vscode": "^1.110.0",
+    "node": ">=18"
   },
   "categories": [
     "Other"
@@ -16,7 +17,8 @@
   ],
   "main": "./dist/extension.js",
   "bin": {
-    "compact": "./dist/cli.js"
+    "compact": "./dist/cli.js",
+    "compact-mcp": "./dist/mcp/index.js"
   },
   "contributes": {
     "chatParticipants": [
@@ -30,7 +32,9 @@
     "languageModelTools": [
       {
         "name": "compact_search_workspace",
-        "tags": ["compact"],
+        "tags": [
+          "compact"
+        ],
         "toolReferenceName": "compact_search",
         "canBeReferencedInPrompt": true,
         "description": "Search the workspace for React component and hook files matching a keyword. Returns a list of matching file paths.",
@@ -42,12 +46,16 @@
               "description": "A filename keyword or glob fragment to search for (e.g. 'Button', 'useAuth', 'Header')."
             }
           },
-          "required": ["keyword"]
+          "required": [
+            "keyword"
+          ]
         }
       },
       {
         "name": "compact_read_and_compress",
-        "tags": ["compact"],
+        "tags": [
+          "compact"
+        ],
         "toolReferenceName": "compact",
         "canBeReferencedInPrompt": true,
         "description": "Read a React/TypeScript file and return a compressed AST skeleton to understand structure with minimal tokens. CRITICAL: The output is compressed — do NOT generate file patches or edits based on this output. To edit a function, you MUST first call compact_read_exact_function to get the real uncompressed source, then use your native edit tools.",
@@ -59,12 +67,16 @@
               "description": "Workspace-relative path to the file to read and compress (e.g. 'src/components/Button.tsx')."
             }
           },
-          "required": ["filePath"]
+          "required": [
+            "filePath"
+          ]
         }
       },
       {
         "name": "compact_read_exact_function",
-        "tags": ["compact"],
+        "tags": [
+          "compact"
+        ],
         "toolReferenceName": "compact_zoom",
         "canBeReferencedInPrompt": true,
         "description": "Extracts the complete, uncompressed, raw source code of a specific named function or component from a file. ALWAYS call this before editing any function — never write patches based on the compressed output from compact_read_and_compress.",
@@ -80,12 +92,17 @@
               "description": "The exact name of the function, component, or variable to extract (e.g. 'BookingListItem', 'handleSubmit', 'RequestSentMessage')."
             }
           },
-          "required": ["filePath", "functionName"]
+          "required": [
+            "filePath",
+            "functionName"
+          ]
         }
       },
       {
         "name": "compact_replace_function",
-        "tags": ["compact"],
+        "tags": [
+          "compact"
+        ],
         "description": "AST-aware surgical replacement. Uses Babel to find the exact byte range of a named function and splice in new code. Only the target function is touched — zero collateral damage to surrounding code or JSX. File is left unsaved for review.",
         "inputSchema": {
           "type": "object",
@@ -103,7 +120,11 @@
               "description": "The complete replacement source for the entire function. No placeholders."
             }
           },
-          "required": ["filePath", "functionName", "newCode"]
+          "required": [
+            "filePath",
+            "functionName",
+            "newCode"
+          ]
         }
       }
     ],
@@ -157,6 +178,8 @@
   "scripts": {
     "build": "npm run build:tsc && npm run bundle:extension",
     "build:tsc": "tsc",
+    "build:mcp": "tsc && chmod +x dist/mcp/index.js",
+    "publish:mcp": "npm run build:mcp && cp -r dist compact-mcp-publish/dist && cd compact-mcp-publish && npm publish --access public",
     "bundle:extension": "esbuild src/extension.ts --bundle --minify --minify-identifiers --minify-syntax --minify-whitespace --platform=node --target=node18 --format=cjs --external:vscode --outfile=dist/extension.js",
     "watch": "tsc --watch",
     "watch:bundle": "esbuild src/extension.ts --bundle --minify-syntax --platform=node --target=node18 --format=cjs --external:vscode --outfile=dist/extension.js --watch",
@@ -174,7 +197,9 @@
     "@babel/generator": "^7.22.5",
     "@babel/parser": "^7.22.5",
     "@babel/traverse": "^7.22.5",
-    "@babel/types": "^7.22.5"
+    "@babel/types": "^7.22.5",
+    "@modelcontextprotocol/sdk": "^1.29.0",
+    "gpt-tokenizer": "^3.4.0"
   },
   "devDependencies": {
     "@types/babel__generator": "^7.27.0",

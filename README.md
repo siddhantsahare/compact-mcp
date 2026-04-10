@@ -48,7 +48,63 @@ Compact solves this by instantly skeletonizing your code. It strips away the vis
 - `Compact: Compress Active File`
 - `Compact: Compress Selection`
 
-## Requirements
+---
+
+## Claude Code MCP Server
+
+Compact ships as an MCP server for **Claude Code** — giving Claude deep React
+intelligence via live Babel AST analysis. No LLM calls inside the server. Pure AST.
+
+### Install (30 seconds)
+
+Add to `.mcp.json` in your project root:
+
+```json
+{
+  "mcpServers": {
+    "compact": {
+      "command": "npx",
+      "args": ["-y", "compact-mcp"]
+    }
+  }
+}
+```
+
+Restart Claude Code. Done. Claude now has three tools:
+
+| Tool | What it does | Saves |
+|---|---|---|
+| `compact_map` | Structural skeleton of the whole project (components, hooks, exports) | 2,000–8,000 tokens vs exploratory reads |
+| `compact_expand` | Raw source of a specific named function | Drill-down without reading whole file |
+| `compact_deps` | Full dependency chain for a component (rendered-by, props, contexts, hooks, renders) | 6+ Read calls |
+
+### Token savings — real benchmark (Excalidraw)
+
+```
+Repo:              excalidraw/excalidraw  (packages/excalidraw/src)
+Files scanned:     206 component files
+Raw tokens:        343,250  (reading every file with native Read)
+Skeleton tokens:     7,722  (one compact_map call)
+Tokens saved:      335,528  (98% reduction)
+Time:                 1.5s
+```
+
+Measured with `gpt-tokenizer` (exact BPE, offline). Run the benchmark yourself:
+
+```bash
+node scripts/benchmark-mcp.mjs ~/excalidraw packages/excalidraw/src
+```
+
+Every token saved counts against your Claude Code rate limit (especially Opus).
+
+### Requirements
+
+- Node.js 18+
+- Claude Code CLI, desktop app, or IDE extension
+
+---
+
+## VS Code Extension Requirements
 
 - VS Code `^1.110.0`
 - GitHub Copilot (for the `@compact` agent)
