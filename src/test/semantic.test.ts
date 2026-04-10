@@ -44,19 +44,24 @@ function topLevelNames(compressed: string): Set<string> {
   });
   const names = new Set<string>();
   traverse(ast, {
-    FunctionDeclaration(path) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    FunctionDeclaration(path: any) {
       if (path.node.id) names.add(path.node.id.name);
     },
-    VariableDeclarator(path) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    VariableDeclarator(path: any) {
       if (path.node.id.type === 'Identifier') names.add(path.node.id.name);
     },
-    ClassDeclaration(path) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    ClassDeclaration(path: any) {
       if (path.node.id) names.add(path.node.id.name);
     },
-    ImportDefaultSpecifier(path) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    ImportDefaultSpecifier(path: any) {
       names.add(path.node.local.name);
     },
-    ImportSpecifier(path) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    ImportSpecifier(path: any) {
       names.add(path.node.local.name);
     },
   });
