@@ -302,7 +302,7 @@ suite('ReactASTCompressor', () => {
   // ─── Token estimation ────────────────────────────────────────
   test('token estimation is reasonable', () => {
     const code = 'const x = 1;';
-    const tokens = compressor.estimateTokens(code);
+    const tokens = compressor.countTokens(code);
     assert.ok(tokens >= 3 && tokens <= 8, `Expected 3-8, got ${tokens}`);
   });
 

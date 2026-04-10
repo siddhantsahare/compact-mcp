@@ -1,197 +1,22 @@
 {
-  "name": "compact-for-copilot",
-  "displayName": "Compact",
-  "description": "Context pre-processor and autonomous agent for React. Strip token bloat, fit 3-5x more files into Copilot, and apply autonomous code edits — 100% local and private.",
-  "publisher": "compact-labs",
-  "icon": "assets/icon.png",
-  "version": "0.5.0",
+  "name": "compact-mcp-core",
+  "description": "React AST compression engine and MCP server for Claude Code. Gives Claude deep React intelligence via live Babel AST analysis — maps component trees, traces dependency chains, extracts raw function source.",
+  "version": "1.0.0",
   "engines": {
-    "vscode": "^1.110.0",
     "node": ">=18"
   },
-  "categories": [
-    "Other"
-  ],
-  "activationEvents": [
-    "onStartupFinished"
-  ],
-  "main": "./dist/extension.js",
+  "main": "./dist/mcp/index.js",
   "bin": {
     "compact": "./dist/cli.js",
     "compact-mcp": "./dist/mcp/index.js"
   },
-  "contributes": {
-    "chatParticipants": [
-      {
-        "id": "compact-for-copilot.compact",
-        "name": "compact",
-        "description": "Reads and compresses React files to save tokens. Type @compact <your request> — it will provide token-efficient context and exact code suggestions for Copilot to apply.",
-        "isSticky": false
-      }
-    ],
-    "languageModelTools": [
-      {
-        "name": "compact_search_workspace",
-        "tags": [
-          "compact"
-        ],
-        "toolReferenceName": "compact_search",
-        "canBeReferencedInPrompt": true,
-        "description": "Search the workspace for React component and hook files matching a keyword. Returns a list of matching file paths.",
-        "inputSchema": {
-          "type": "object",
-          "properties": {
-            "keyword": {
-              "type": "string",
-              "description": "A filename keyword or glob fragment to search for (e.g. 'Button', 'useAuth', 'Header')."
-            }
-          },
-          "required": [
-            "keyword"
-          ]
-        }
-      },
-      {
-        "name": "compact_read_and_compress",
-        "tags": [
-          "compact"
-        ],
-        "toolReferenceName": "compact",
-        "canBeReferencedInPrompt": true,
-        "description": "Read a React/TypeScript file and return a compressed AST skeleton to understand structure with minimal tokens. CRITICAL: The output is compressed — do NOT generate file patches or edits based on this output. To edit a function, you MUST first call compact_read_exact_function to get the real uncompressed source, then use your native edit tools.",
-        "inputSchema": {
-          "type": "object",
-          "properties": {
-            "filePath": {
-              "type": "string",
-              "description": "Workspace-relative path to the file to read and compress (e.g. 'src/components/Button.tsx')."
-            }
-          },
-          "required": [
-            "filePath"
-          ]
-        }
-      },
-      {
-        "name": "compact_read_exact_function",
-        "tags": [
-          "compact"
-        ],
-        "toolReferenceName": "compact_zoom",
-        "canBeReferencedInPrompt": true,
-        "description": "Extracts the complete, uncompressed, raw source code of a specific named function or component from a file. ALWAYS call this before editing any function — never write patches based on the compressed output from compact_read_and_compress.",
-        "inputSchema": {
-          "type": "object",
-          "properties": {
-            "filePath": {
-              "type": "string",
-              "description": "Workspace-relative path to the file (e.g. 'src/components/BookingListItem.tsx')."
-            },
-            "functionName": {
-              "type": "string",
-              "description": "The exact name of the function, component, or variable to extract (e.g. 'BookingListItem', 'handleSubmit', 'RequestSentMessage')."
-            }
-          },
-          "required": [
-            "filePath",
-            "functionName"
-          ]
-        }
-      },
-      {
-        "name": "compact_replace_function",
-        "tags": [
-          "compact"
-        ],
-        "description": "AST-aware surgical replacement. Uses Babel to find the exact byte range of a named function and splice in new code. Only the target function is touched — zero collateral damage to surrounding code or JSX. File is left unsaved for review.",
-        "inputSchema": {
-          "type": "object",
-          "properties": {
-            "filePath": {
-              "type": "string",
-              "description": "Workspace-relative path to the file to edit."
-            },
-            "functionName": {
-              "type": "string",
-              "description": "Exact name of the function or component to replace."
-            },
-            "newCode": {
-              "type": "string",
-              "description": "The complete replacement source for the entire function. No placeholders."
-            }
-          },
-          "required": [
-            "filePath",
-            "functionName",
-            "newCode"
-          ]
-        }
-      }
-    ],
-    "commands": [
-      {
-        "command": "compact.compressFile",
-        "title": "Compact: Compress Active File",
-        "icon": "$(symbol-structure)"
-      },
-      {
-        "command": "compact.compressSelection",
-        "title": "Compact: Compress Selection",
-        "icon": "$(symbol-structure)"
-      },
-      {
-        "command": "compact.copyCompressed",
-        "title": "Compact: Copy Compressed to Clipboard",
-        "icon": "$(clippy)"
-      }
-    ],
-    "keybindings": [
-      {
-        "command": "compact.copyCompressed",
-        "key": "ctrl+shift+alt+c",
-        "mac": "cmd+shift+alt+c",
-        "when": "editorTextFocus && resourceExtname =~ /\\.[jt]sx?$/"
-      }
-    ],
-    "menus": {
-      "editor/context": [
-        {
-          "command": "compact.copyCompressed",
-          "when": "resourceExtname =~ /\\.[jt]sx?$/",
-          "group": "9_cutcopypaste@99"
-        },
-        {
-          "command": "compact.compressFile",
-          "when": "resourceExtname =~ /\\.[jt]sx?$/",
-          "group": "9_cutcopypaste@100"
-        }
-      ],
-      "editor/title": [
-        {
-          "command": "compact.copyCompressed",
-          "when": "resourceExtname =~ /\\.[jt]sx?$/",
-          "group": "navigation"
-        }
-      ]
-    }
-  },
   "scripts": {
-    "build": "npm run build:tsc && npm run bundle:extension",
-    "build:tsc": "tsc",
+    "build": "tsc",
     "build:mcp": "tsc && chmod +x dist/mcp/index.js",
     "publish:mcp": "npm run build:mcp && cp -r dist compact-mcp-publish/dist && cd compact-mcp-publish && npm publish --access public",
-    "bundle:extension": "esbuild src/extension.ts --bundle --minify --minify-identifiers --minify-syntax --minify-whitespace --platform=node --target=node18 --format=cjs --external:vscode --outfile=dist/extension.js",
     "watch": "tsc --watch",
-    "watch:bundle": "esbuild src/extension.ts --bundle --minify-syntax --platform=node --target=node18 --format=cjs --external:vscode --outfile=dist/extension.js --watch",
-    "vscode:prepublish": "npm run build",
-    "package:vsix": "npx @vscode/vsce package --allow-missing-repository --skip-license",
-    "inspect:vsix": "npx @vscode/vsce ls --tree",
-    "benchmark": "npm run build && node dist/benchmark.js",
-    "evals": "npm run build && node dist/run_evals.js",
-    "evals:dry": "npm run build && node dist/run_evals.js --dry-run",
     "lint": "eslint src/",
-    "pretest": "npm run build && npm run lint",
-    "test": "vscode-test"
+    "test": "tsc && node --test dist/test/**/*.test.js"
   },
   "dependencies": {
     "@babel/generator": "^7.22.5",
@@ -208,10 +33,6 @@
     "@types/node": "22.x",
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
-    "@types/vscode": "^1.110.0",
-    "@vscode/test-cli": "^0.0.12",
-    "@vscode/test-electron": "^2.5.2",
-    "esbuild": "^0.27.3",
     "eslint": "^9.39.3",
     "typescript": "^5.9.3"
   }

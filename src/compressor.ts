@@ -1,5 +1,5 @@
 import generate from '@babel/generator';
-import { parse, estimateTokens } from './parser.js';
+import { parse, countTokens } from './parser.js';
 import { ALL_RULES } from './rules/index.js';
 import { makeStripJsxAttributes } from './rules/stripJsxAttributes.js';
 import type { CompressorOptions, CompressResult, RuleName, PruningRule, PreprocessorOptions } from './types.js';
@@ -62,8 +62,8 @@ export class ReactASTCompressor {
       retainLines: false,
     });
 
-    const originalTokens = estimateTokens(code);
-    const compressedTokens = estimateTokens(output.code);
+    const originalTokens = countTokens(code);
+    const compressedTokens = countTokens(output.code);
     const savingsPercent =
       originalTokens > 0
         ? Math.round(((originalTokens - compressedTokens) / originalTokens) * 100)
@@ -77,8 +77,8 @@ export class ReactASTCompressor {
     };
   }
 
-  /** Rough token estimate (~4 chars per token). */
-  estimateTokens(text: string): number {
-    return estimateTokens(text);
+  /** Exact BPE token count. */
+  countTokens(text: string): number {
+    return countTokens(text);
   }
 }

@@ -1,5 +1,5 @@
 export { ReactASTCompressor } from './compressor.js';
-export { parse, estimateTokens } from './parser.js';
+export { parse, estimateTokens, countTokens } from './parser.js';
 export type {
   RuleName,
   PruningRule,

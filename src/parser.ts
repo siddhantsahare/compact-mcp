@@ -1,5 +1,6 @@
 import { parse as babelParse } from '@babel/parser';
 import type { File } from '@babel/types';
+import { encode } from 'gpt-tokenizer';
 import { BABEL_BASE_PLUGINS } from './types.js';
 
 /**
@@ -30,4 +31,13 @@ export function estimateTokens(text: string): number {
   if (!text) return 0;
   const normalized = text.replace(/\s+/g, ' ').trim();
   return Math.ceil(normalized.length / 4);
+}
+
+/**
+ * Exact BPE token count using the same Byte-Pair Encoding algorithm LLMs use.
+ * Uses gpt-tokenizer (100% offline, zero network calls, pure JS dictionary lookup).
+ */
+export function countTokens(text: string): number {
+  if (!text) return 0;
+  return encode(text).length;
 }

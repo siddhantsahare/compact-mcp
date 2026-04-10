@@ -134,13 +134,23 @@ export interface CreateFileArgs {
 
 // ─── Session Cache ──────────────────────────────────────────────
 
+/** Per-file token metrics stored during compression. */
+export interface FileTokenMetrics {
+  originalTokens: number;
+  compressedTokens: number;
+}
+
 /**
  * Per-request cache that tracks which files have already been compressed
  * during the current chat turn. Prevents redundant AST processing when
  * the LLM requests the same file more than once.
+ *
+ * Also stores per-file token metrics so downstream tools (e.g. compact_replace_function)
+ * can calculate total workflow savings without re-compressing.
  */
 export class CompressedFileCache {
   private readonly seen = new Set<string>();
+  private readonly metrics = new Map<string, FileTokenMetrics>();
 
   has(filePath: string): boolean {
     return this.seen.has(filePath);
@@ -148,5 +158,15 @@ export class CompressedFileCache {
 
   add(filePath: string): void {
     this.seen.add(filePath);
+  }
+
+  /** Store token metrics for a file after compression. */
+  setMetrics(filePath: string, metrics: FileTokenMetrics): void {
+    this.metrics.set(filePath, metrics);
+  }
+
+  /** Retrieve token metrics for a previously compressed file. */
+  getMetrics(filePath: string): FileTokenMetrics | undefined {
+    return this.metrics.get(filePath);
   }
 }
