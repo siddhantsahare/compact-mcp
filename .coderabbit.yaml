@@ -1,0 +1,37 @@
+language: en-US
+
+reviews:
+  profile: assertive
+  request_changes_workflow: true
+  high_level_summary: true
+  poem: false
+  collapse_walkthrough: false
+
+  path_instructions:
+    - path: "src/rules/**"
+      instructions: |
+        This is the Babel AST compression engine. Check:
+        - Rule ordering side effects (does this rule remove nodes a later rule depends on?)
+        - Does the rule handle edge cases: empty function bodies, arrow expressions vs block statements,
+          class methods, export default declarations?
+        - Does it correctly handle errorRecovery AST nodes (partial parse output)?
+
+    - path: "src/mcp/tools/**"
+      instructions: |
+        These are the MCP tool implementations. Check:
+        - Path traversal: any new file reads must validate the resolved path stays within rootDir
+        - Non-JS file fallback: must return [non-js] signal, not raw content or an error object
+        - Error messages must be actionable (include available symbols list, suggest fallback)
+        - Tool responses must match the MCP content format: { content: [{ type: 'text', text: string }] }
+
+    - path: "src/mcp/walker.ts"
+      instructions: |
+        Check that any new exclusion patterns use the correct glob format.
+        The 200-file cap (MAX_FILES) must not be silently raised without updating docs.
+
+  auto_review:
+    enabled: true
+    drafts: false
+
+chat:
+  auto_reply: true

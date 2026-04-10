@@ -22,15 +22,13 @@
 
 **Claimed savings:** 60–90% on CLI output. Their 90% headline is achieved with combined filters on specific commands (git + test runner output).
 
-**Why it's not a substitute for compact-mcp:**
-- RTK compresses **shell command output** — it has nothing to say about code files.
-- RTK doesn't know what a React component is, what hooks it uses, or who renders it.
-- A developer using RTK still reads entire files raw with Claude's native Read tool.
-- The token problems RTK solves (verbose git status, 500-line test output) are different from the token problems compact-mcp solves (reading 6 files to understand one component's context).
+**RTK does also compress `cat`, `ls`, and file read commands** — it wraps any shell command, including `cat Button.tsx`. But the compression is text-based (strip blank lines, truncate repetition, remove noise) — not AST-aware. When RTK compresses `cat Button.tsx`, it has no idea what a hook is, what props the component accepts, or what it renders. It reduces byte count but the structural signal is the same.
+
+compact_expand returns the exact function body with zero compression — no bytes trimmed, full signal. The difference is *selectivity*: compact_expand returns only the function you asked for (saving 44–80% vs reading the whole file), while RTK returns the whole file with some bytes removed.
 
 **RTK + compact-mcp are complementary, not competitive.** A well-configured session uses both:
-- RTK: compress terminal output
-- compact-mcp: compress codebase reading
+- RTK: compress terminal output (git, test runners, build logs)
+- compact-mcp: React-specific codebase orientation and selective function extraction
 
 ---
 
