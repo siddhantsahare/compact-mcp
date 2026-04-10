@@ -1,5 +1,5 @@
 import { readFileSync } from 'node:fs';
-import { resolve } from 'node:path';
+import { resolve, sep } from 'node:path';
 import traverse from '@babel/traverse';
 import * as t from '@babel/types';
 import { parse, countTokens } from '../../parser.js';
@@ -22,7 +22,13 @@ export interface ExpandMetrics {
  * DO NOT edit based on compact_read output — always expand first, then edit.
  */
 export function compactExpand(filePath: string, functionName: string, rootDir: string): { text: string; metrics: ExpandMetrics | null } {
+  const absRoot = resolve(rootDir);
   const absPath = resolve(rootDir, filePath);
+
+  // Path traversal guard: resolved path must be inside rootDir
+  if (!absPath.startsWith(absRoot + sep) && absPath !== absRoot) {
+    return { text: `[error] Path traversal not allowed: "${filePath}" resolves outside the project root.`, metrics: null };
+  }
 
   // Non-JS file fallback
   if (!isJsFile(filePath)) {
