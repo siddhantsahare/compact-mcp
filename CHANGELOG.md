@@ -4,6 +4,14 @@ All notable changes to compact-mcp are documented here.
 
 ---
 
+## [1.0.2] — 2026-04-11
+
+### Fixed
+- README now shows live token savings output (`📊` line) so users know where to see real-time results.
+- CLAUDE.md section clarified as optional — compact-mcp works without it, tool descriptions guide Claude automatically.
+
+---
+
 ## [1.0.1] — 2026-04-11
 
 ### Added
