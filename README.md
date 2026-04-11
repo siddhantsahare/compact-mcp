@@ -71,11 +71,39 @@ your-project/
 
 > **Requirements:** Node.js 18+. The `npx` command pulls the latest version automatically — no global install needed.
 
-After every tool call, Claude shows a live savings line at the bottom of its response:
+After every tool call, your AI assistant shows a live savings line:
 
 ```
 📊 compact_map: 206 files | 343,250 raw tokens → 7,722 skeleton tokens | saved 335,528 tokens (98%)
 📊 compact_expand: 847 tokens (function) vs 6,200 tokens (full file) | saved 5,353 tokens (86%)
+```
+
+### AI assistant rules (optional)
+
+compact-mcp works without any extra config — the AI reads the tool descriptions and calls the right tool automatically. For consistent behaviour across every session, add these rules to your AI assistant's project instructions file:
+
+| Client | File |
+|---|---|
+| Claude Code | `CLAUDE.md` in project root |
+| Cursor | `.cursor/rules` or Settings → Rules |
+| Windsurf | `.windsurfrules` in project root |
+| Continue | `.continue/config.json` → `systemMessage` |
+
+```markdown
+## When to use compact_map
+- At the START of any task involving multiple React/TS files
+- When asked to "understand", "explain", or "explore" the codebase
+- When you don't know which file to edit yet
+- DO NOT call compact_map if the user already told you the exact file to edit
+- DO NOT call compact_map twice in the same session — reuse what's in context
+
+## When NOT to use compact tools
+- For the file you are about to EDIT — always use native Read for the edit target
+- For non-JS/TS files (YAML, JSON, Prisma, Python, SQL, Markdown, CSS)
+
+## Edit safety rule
+NEVER generate edits based on compact_map or compact_deps output.
+ALWAYS call compact_expand first, then use native Read/Edit for the actual change.
 ```
 
 ---
@@ -206,36 +234,6 @@ The savings are not from hiding information — they are from not reading files 
 | Implementation detail (exact code to edit) | `compact_expand` | **No — 100% raw source** |
 
 Claude never edits based on compressed output. `compact_expand` always returns exact source. The compression only applies to context files — files you read to understand the codebase, not the file you're editing.
-
----
-
-## AI assistant rules (optional but recommended)
-
-compact-mcp works without any extra config — the AI reads the tool descriptions and calls the right tool automatically. But if you want consistent behaviour across every session, add these rules to your AI assistant's project instructions file:
-
-| Client | File |
-|---|---|
-| Claude Code | `CLAUDE.md` in project root |
-| Cursor | `.cursor/rules` or Settings → Rules |
-| Windsurf | `.windsurfrules` in project root |
-| Continue | `.continue/config.json` → `systemMessage` |
-
-```markdown
-## When to use compact_map
-- At the START of any task involving multiple React/TS files
-- When asked to "understand", "explain", or "explore" the codebase
-- When you don't know which file to edit yet
-- DO NOT call compact_map if the user already told you the exact file to edit
-- DO NOT call compact_map twice in the same session — reuse what's in context
-
-## When NOT to use compact tools
-- For the file you are about to EDIT — always use native Read for the edit target
-- For non-JS/TS files (YAML, JSON, Prisma, Python, SQL, Markdown, CSS)
-
-## Edit safety rule
-NEVER generate edits based on compact_map or compact_deps output.
-ALWAYS call compact_expand first, then use native Read/Edit for the actual change.
-```
 
 ---
 
