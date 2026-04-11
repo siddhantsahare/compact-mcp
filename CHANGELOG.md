@@ -4,6 +4,31 @@ All notable changes to compact-mcp are documented here.
 
 ---
 
+## [1.0.1] — 2026-04-11
+
+### Added
+
+- **Prompt templates** — 3 MCP prompt templates registered: `compact_map_project`, `compact_explain_component`, `compact_expand_function`. Surface as slash commands in Claude Code and Cursor.
+- **Multi-client install docs** — README now includes exact config file paths for Claude Code, Cursor, Windsurf, Continue, and Claude Desktop.
+- **Competitive analysis** — `md/competitive-analysis.md` updated with full code-review-graph comparison.
+- **Security scanner** — `.claude/commands/security-scan.md` — 10-category pre-publish security scanner runnable as `/security-scan`.
+
+### Fixed
+
+- `compact-mcp-publish/package.json` — README was not included in published package. Fixed publish script to copy README before publishing.
+- `compact-map.ts` — replaced `declare namespace babel { type NodePath = any }` hack with proper `import type { NodePath } from '@babel/traverse'`.
+- `compact-deps.ts` — removed duplicate `ComponentDef`, `ComponentUsage`, `FileAnalysis` interface definitions.
+- `semantic.test.ts` — removed dead `topLevelNames` function and orphaned `traverse` import.
+
+### Changed
+
+- `compact-mcp-publish/package.json` — explicit `zod: ^3.25.0` dependency added (was relying on transitive resolution via MCP SDK).
+- `compact-mcp-publish/package.json` — `files` field tightened to exclude `extension.*`, `benchmark.*`, `run_evals.*`, `tools.*`, `test/` from published package. Package size: 388 kB → 195 kB.
+- npm keywords updated to `mcp, react, claude-code, cursor, ast, babel, typescript, token-optimization, react-ast, model-context-protocol`.
+- Repository renamed from `merlin-optimus` to `compact-mcp` on GitHub.
+
+---
+
 ## [1.0.0] — 2026-04-10
 
 ### Added
