@@ -1,4 +1,4 @@
-import traverse from '@babel/traverse';
+import traverse, { type NodePath } from '@babel/traverse';
 import * as t from '@babel/types';
 import { parse, countTokens } from '../../parser.js';
 import { walkProject, MAX_FILES } from '../walker.js';
@@ -151,7 +151,7 @@ const TRACKED_HOOKS = new Set([
   'useImperativeHandle', 'useId', 'useTransition', 'useDeferredValue',
 ]);
 
-function extractComponentFromPath(path: babel.NodePath): ComponentInfo | null {
+function extractComponentFromPath(path: NodePath): ComponentInfo | null {
   let name = '';
   let isExported = false;
   let isDefault = false;
@@ -377,9 +377,3 @@ function dedup<T>(arr: T[]): T[] {
   return [...new Set(arr)];
 }
 
-// Type import for babel traverse path
-// eslint-disable-next-line @typescript-eslint/no-namespace
-declare namespace babel {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  type NodePath = any;
-}

@@ -29,7 +29,7 @@ export async function startMcpServer(): Promise<void> {
   const server = new McpServer(
     { name: 'compact-mcp', version: '1.0.0' },
     {
-      capabilities: { tools: {} },
+      capabilities: { tools: {}, prompts: {} },
       instructions: SERVER_INSTRUCTIONS.trim(),
     },
   );
@@ -128,6 +128,96 @@ export async function startMcpServer(): Promise<void> {
       const result = await compactDeps(componentName, dir);
       return { content: [{ type: 'text' as const, text: result }] };
     },
+  );
+
+  // ── Prompts ──────────────────────────────────────────────────────────────
+
+  // Prompt 1: Map the project
+  server.registerPrompt(
+    'compact_map_project',
+    {
+      title: 'Map this React project',
+      description:
+        'Get a structural skeleton of the entire React project — components, hooks, exports, ' +
+        'and render trees — in one call. Use at the start of any multi-file task.',
+    },
+    () => ({
+      messages: [
+        {
+          role: 'user' as const,
+          content: {
+            type: 'text' as const,
+            text:
+              'Use compact_map to get a structural overview of this React project. ' +
+              'Then summarise what you found: the main pages/routes, the key shared components, ' +
+              'and any patterns you notice (contexts used, common hooks, etc.).',
+          },
+        },
+      ],
+    }),
+  );
+
+  // Prompt 2: Explain a component's dependency chain
+  server.registerPrompt(
+    'compact_explain_component',
+    {
+      title: 'Explain a component',
+      description:
+        'Trace the full dependency chain for a React component: who renders it, what props ' +
+        'it receives, what contexts and hooks it uses, and what it renders.',
+      argsSchema: {
+        componentName: z
+          .string()
+          .describe('Name of the React component to explain (e.g. "CheckoutForm")'),
+      },
+    },
+    ({ componentName }) => ({
+      messages: [
+        {
+          role: 'user' as const,
+          content: {
+            type: 'text' as const,
+            text:
+              `Use compact_deps to trace the full dependency chain for the ${componentName} component. ` +
+              `Then explain: where it sits in the component tree, what data it depends on, ` +
+              `and what would need to change if I refactored it.`,
+          },
+        },
+      ],
+    }),
+  );
+
+  // Prompt 3: Expand and explain a function
+  server.registerPrompt(
+    'compact_expand_function',
+    {
+      title: 'Expand a function',
+      description:
+        'Get the raw uncompressed source of a named function and explain what it does. ' +
+        'Use before editing any function.',
+      argsSchema: {
+        functionName: z
+          .string()
+          .describe('Exact name of the function or component to expand (e.g. "handleSubmit")'),
+        filePath: z
+          .string()
+          .describe('File path relative to project root (e.g. "src/components/CheckoutForm.tsx")'),
+      },
+    },
+    ({ functionName, filePath }) => ({
+      messages: [
+        {
+          role: 'user' as const,
+          content: {
+            type: 'text' as const,
+            text:
+              `Use compact_expand to get the raw source of ${functionName} from ${filePath}. ` +
+              `Then explain what it does, what it depends on, and flag anything that looks ` +
+              `fragile or worth knowing before I edit it.`,
+          },
+        },
+      ],
+    }),
   );
 
   // ── Start ────────────────────────────────────────────────────────────────

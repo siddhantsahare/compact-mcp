@@ -18,30 +18,6 @@ import { walkProject } from '../walker.js';
 export async function compactDeps(componentName: string, rootDir: string): Promise<string> {
   const { files, totalFound } = await walkProject(rootDir);
 
-  // Per-file analysis
-  interface FileAnalysis {
-    relPath: string;
-    // Components defined in this file
-    components: ComponentDef[];
-    // Components used (rendered) in this file
-    usages: ComponentUsage[];
-  }
-
-  interface ComponentDef {
-    name: string;
-    props: string[];
-    contexts: string[];
-    hooks: string[];
-    renders: string[];
-    isDefault: boolean;
-  }
-
-  interface ComponentUsage {
-    parentName: string;
-    childName: string;
-    passedProps: string[];
-  }
-
   const analyses: FileAnalysis[] = [];
 
   for (const { relPath, source } of files) {

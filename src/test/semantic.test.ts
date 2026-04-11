@@ -18,7 +18,6 @@
 
 import assert from 'node:assert';
 import { parse } from '@babel/parser';
-import traverse from '@babel/traverse';
 import { ReactASTCompressor } from '../compressor.js';
 
 /** Re-parse the compressed output — throws if syntax is broken. */
@@ -35,38 +34,6 @@ function assertReparseable(compressed: string, label: string): void {
   }
 }
 
-/** Collect all top-level identifier names from a parsed AST. */
-function topLevelNames(compressed: string): Set<string> {
-  const ast = parse(compressed, {
-    sourceType: 'module',
-    plugins: ['jsx', 'typescript'],
-    errorRecovery: true,
-  });
-  const names = new Set<string>();
-  traverse(ast, {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    FunctionDeclaration(path: any) {
-      if (path.node.id) names.add(path.node.id.name);
-    },
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    VariableDeclarator(path: any) {
-      if (path.node.id.type === 'Identifier') names.add(path.node.id.name);
-    },
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    ClassDeclaration(path: any) {
-      if (path.node.id) names.add(path.node.id.name);
-    },
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    ImportDefaultSpecifier(path: any) {
-      names.add(path.node.local.name);
-    },
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    ImportSpecifier(path: any) {
-      names.add(path.node.local.name);
-    },
-  });
-  return names;
-}
 
 suite('Semantic Preservation', () => {
   let compressor: ReactASTCompressor;

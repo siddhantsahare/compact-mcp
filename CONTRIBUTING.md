@@ -18,8 +18,8 @@ Thanks for wanting to improve compact-mcp. This is a focused project — contrib
 ## Setup
 
 ```bash
-git clone https://github.com/siddhantsahare/merlin-optimus
-cd merlin-optimus
+git clone https://github.com/siddhantsahare/compact-mcp
+cd compact-mcp
 npm install
 npm run build
 ```

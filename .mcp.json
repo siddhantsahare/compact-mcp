@@ -1,7 +1,7 @@
 {
   "mcpServers": {
     "compact": {
-      "command": "node",
+      "command": "/mnt/c/Program Files/nodejs/node.exe",
       "args": ["dist/mcp/index.js"]
     },
     "github": {

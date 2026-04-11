@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "Read(//home/siddhant/.claude/**)",
+      "Read(//home/siddhant/.nvm/versions/**)",
+      "Read(//usr/local/bin/**)",
+      "Read(//usr/bin/**)",
+      "mcp__compact__compact_map"
+    ]
+  }
+}

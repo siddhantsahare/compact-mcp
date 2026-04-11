@@ -2,7 +2,7 @@
 
 **React AST intelligence for Claude Code. Map component trees, trace dependencies, extract raw source — 73–98% fewer tokens on React codebase tasks.**
 
-[![CI](https://github.com/siddhantsahare/merlin-optimus/actions/workflows/ci.yml/badge.svg)](https://github.com/siddhantsahare/merlin-optimus/actions/workflows/ci.yml)
+[![CI](https://github.com/siddhantsahare/compact-mcp/actions/workflows/ci.yml/badge.svg)](https://github.com/siddhantsahare/compact-mcp/actions/workflows/ci.yml)
 [![npm](https://img.shields.io/npm/v/compact-mcp)](https://www.npmjs.com/package/compact-mcp)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
@@ -20,7 +20,7 @@ compact-mcp solves this with live Babel AST analysis: a structural skeleton of 2
 
 ## Install (30 seconds)
 
-Add to `.mcp.json` in your project root:
+The MCP config is the same JSON block across all clients — only the file location differs.
 
 ```json
 {
@@ -33,9 +33,43 @@ Add to `.mcp.json` in your project root:
 }
 ```
 
-Restart Claude Code. Done.
+**Claude Code** — add to `.mcp.json` at your project root, then `/restart`:
 
-> **Requirements:** Node.js 18+. Works with Claude Code, Cursor, Claude Desktop, and any MCP-compatible client.
+```
+your-project/
+└── .mcp.json   ← paste the block above
+```
+
+**Cursor** — add to `.cursor/mcp.json` at your project root (or `~/.cursor/mcp.json` for global):
+
+```
+your-project/
+└── .cursor/
+    └── mcp.json   ← paste the block above
+```
+
+**Windsurf** — add to `~/.codeium/windsurf/mcp_config.json`:
+
+```
+~/.codeium/windsurf/
+└── mcp_config.json   ← paste the block above
+```
+
+**Continue** — add under `mcpServers` in `~/.continue/config.json`:
+
+```
+~/.continue/
+└── config.json   ← paste the block above
+```
+
+**Claude Desktop** — add to `~/Library/Application Support/Claude/claude_desktop_config.json` (macOS) or `%APPDATA%\Claude\claude_desktop_config.json` (Windows):
+
+```
+~/Library/Application Support/Claude/
+└── claude_desktop_config.json   ← paste the block above
+```
+
+> **Requirements:** Node.js 18+. The `npx` command pulls the latest version automatically — no global install needed.
 
 ---
 
