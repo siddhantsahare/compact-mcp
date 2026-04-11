@@ -13,7 +13,7 @@
   "scripts": {
     "build": "tsc",
     "build:mcp": "tsc && node -e \"require('fs').chmodSync('dist/mcp/index.js', 0o755)\"",
-    "publish:mcp": "npm run build:mcp && node -e \"const fs=require('fs'),path=require('path'); function cpDir(s,d){fs.mkdirSync(d,{recursive:true});for(const f of fs.readdirSync(s)){const ss=path.join(s,f),dd=path.join(d,f);fs.statSync(ss).isDirectory()?cpDir(ss,dd):fs.copyFileSync(ss,dd)}} cpDir('dist','compact-mcp-publish/dist')\" && cd compact-mcp-publish && npm publish --access public",
+    "publish:mcp": "npm run build:mcp && node -e \"const fs=require('fs'),path=require('path'); function cpDir(s,d){fs.mkdirSync(d,{recursive:true});for(const f of fs.readdirSync(s)){const ss=path.join(s,f),dd=path.join(d,f);fs.statSync(ss).isDirectory()?cpDir(ss,dd):fs.copyFileSync(ss,dd)}} cpDir('dist','compact-mcp-publish/dist'); fs.copyFileSync('README.md','compact-mcp-publish/README.md')\" && cd compact-mcp-publish && npm publish --access public",
     "watch": "tsc --watch",
     "lint": "eslint src/",
     "test": "tsc && mocha --ui tdd dist/test/**/*.test.js"

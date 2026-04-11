@@ -1,6 +1,6 @@
 {
   "name": "compact-mcp",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "MCP server that gives Claude Code deep React intelligence via live Babel AST analysis. Maps component trees, traces re-render blast radius, and extracts dependency chains — all from real AST, not guesswork.",
   "keywords": ["mcp", "react", "claude-code", "cursor", "ast", "babel", "typescript", "token-optimization", "react-ast", "model-context-protocol"],
   "author": "compact-labs",
