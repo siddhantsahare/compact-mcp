@@ -71,6 +71,13 @@ your-project/
 
 > **Requirements:** Node.js 18+. The `npx` command pulls the latest version automatically — no global install needed.
 
+After every tool call, Claude shows a live savings line at the bottom of its response:
+
+```
+📊 compact_map: 206 files | 343,250 raw tokens → 7,722 skeleton tokens | saved 335,528 tokens (98%)
+📊 compact_expand: 847 tokens (function) vs 6,200 tokens (full file) | saved 5,353 tokens (86%)
+```
+
 ---
 
 ## Three tools
@@ -202,9 +209,9 @@ Claude never edits based on compressed output. `compact_expand` always returns e
 
 ---
 
-## CLAUDE.md rules
+## CLAUDE.md rules (optional but recommended)
 
-compact-mcp ships with a `CLAUDE.md`. When you add `.mcp.json` to a project, also copy these rules so Claude knows when to use each tool:
+compact-mcp works without a CLAUDE.md — Claude reads the tool descriptions and uses them automatically. But adding these rules to your project's `CLAUDE.md` makes the behaviour consistent across every session:
 
 ```markdown
 ## When to use compact_map
