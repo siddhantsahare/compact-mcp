@@ -1,6 +1,6 @@
 # compact-mcp
 
-**React AST intelligence for Claude Code. Map component trees, trace dependencies, extract raw source — 73–98% fewer tokens on React codebase tasks.**
+**React AST intelligence for Claude Code, Cursor, Windsurf, and any MCP-compatible AI assistant. Map component trees, trace dependencies, extract raw source — 73–98% fewer tokens on React codebase tasks.**
 
 [![CI](https://github.com/siddhantsahare/compact-mcp/actions/workflows/ci.yml/badge.svg)](https://github.com/siddhantsahare/compact-mcp/actions/workflows/ci.yml)
 [![npm](https://img.shields.io/npm/v/compact-mcp)](https://www.npmjs.com/package/compact-mcp)
@@ -209,9 +209,16 @@ Claude never edits based on compressed output. `compact_expand` always returns e
 
 ---
 
-## CLAUDE.md rules (optional but recommended)
+## AI assistant rules (optional but recommended)
 
-compact-mcp works without a CLAUDE.md — Claude reads the tool descriptions and uses them automatically. But adding these rules to your project's `CLAUDE.md` makes the behaviour consistent across every session:
+compact-mcp works without any extra config — the AI reads the tool descriptions and calls the right tool automatically. But if you want consistent behaviour across every session, add these rules to your AI assistant's project instructions file:
+
+| Client | File |
+|---|---|
+| Claude Code | `CLAUDE.md` in project root |
+| Cursor | `.cursor/rules` or Settings → Rules |
+| Windsurf | `.windsurfrules` in project root |
+| Continue | `.continue/config.json` → `systemMessage` |
 
 ```markdown
 ## When to use compact_map
