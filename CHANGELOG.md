@@ -4,6 +4,15 @@ All notable changes to compact-mcp are documented here.
 
 ---
 
+## [1.0.3] — 2026-04-11
+
+### Changed
+- README headline updated — now mentions Claude Code, Cursor, Windsurf, and all MCP-compatible clients (not Claude Code only).
+- AI assistant rules section moved to immediately after the install block — visible before the tool docs.
+- Rules section renamed from "CLAUDE.md rules" to "AI assistant rules" with a table showing the right file for each client.
+
+---
+
 ## [1.0.2] — 2026-04-11
 
 ### Fixed
