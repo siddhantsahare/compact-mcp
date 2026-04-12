@@ -21,6 +21,8 @@ TOOLS:
 
 IMPORTANT: These tools are for CONTEXT files (files you read for orientation).
 The file you are about to EDIT must ALWAYS be read with Claude's native Read tool.
+
+ALWAYS include the 📊 metrics line from the tool output verbatim in your response when you use any compact tool.
 `;
 
 export async function startMcpServer(): Promise<void> {
@@ -58,9 +60,9 @@ export async function startMcpServer(): Promise<void> {
       const dir = rootDir ? rootDir : cwd;
       const { text, metrics } = await compactMap(dir);
       const metricsLine = metrics.savedTokens > 0
-        ? `\n\n📊 compact_map: ${metrics.filesScanned} files | ${metrics.rawTokens.toLocaleString()} raw tokens → ${metrics.skeletonTokens.toLocaleString()} skeleton tokens | saved ${metrics.savedTokens.toLocaleString()} tokens (${metrics.savedPercent}%)`
+        ? `📊 compact_map: ${metrics.filesScanned} files | ${metrics.rawTokens.toLocaleString()} raw tokens → ${metrics.skeletonTokens.toLocaleString()} skeleton tokens | saved ${metrics.savedTokens.toLocaleString()} tokens (${metrics.savedPercent}%)\n\n`
         : '';
-      return { content: [{ type: 'text' as const, text: text + metricsLine }] };
+      return { content: [{ type: 'text' as const, text: metricsLine + text }] };
     },
   );
 
@@ -95,9 +97,9 @@ export async function startMcpServer(): Promise<void> {
       const dir = rootDir ?? cwd;
       const { text, metrics } = compactExpand(filePath, functionName, dir);
       const metricsLine = metrics && metrics.savedTokens > 0
-        ? `\n\n📊 compact_expand: ${metrics.functionTokens} tokens (function) vs ${metrics.fileTokens} tokens (full file) | saved ${metrics.savedTokens} tokens (${metrics.savedPercent}%)`
+        ? `📊 compact_expand: ${metrics.functionTokens} tokens (function) vs ${metrics.fileTokens} tokens (full file) | saved ${metrics.savedTokens} tokens (${metrics.savedPercent}%)\n\n`
         : '';
-      return { content: [{ type: 'text' as const, text: text + metricsLine }] };
+      return { content: [{ type: 'text' as const, text: metricsLine + text }] };
     },
   );
 
@@ -150,7 +152,8 @@ export async function startMcpServer(): Promise<void> {
             text:
               'Use compact_map to get a structural overview of this React project. ' +
               'Then summarise what you found: the main pages/routes, the key shared components, ' +
-              'and any patterns you notice (contexts used, common hooks, etc.).',
+              'and any patterns you notice (contexts used, common hooks, etc.). ' +
+              'IMPORTANT: at the end of your response, copy the 📊 compact_map line from the tool output verbatim (do not paraphrase it).',
           },
         },
       ],
@@ -213,7 +216,8 @@ export async function startMcpServer(): Promise<void> {
             text:
               `Use compact_expand to get the raw source of ${functionName} from ${filePath}. ` +
               `Then explain what it does, what it depends on, and flag anything that looks ` +
-              `fragile or worth knowing before I edit it.`,
+              `fragile or worth knowing before I edit it. ` +
+              `IMPORTANT: at the end of your response, copy the 📊 compact_expand line from the tool output verbatim (do not paraphrase it).`,
           },
         },
       ],
