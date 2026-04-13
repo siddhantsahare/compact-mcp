@@ -20,7 +20,25 @@ compact-mcp solves this with live Babel AST analysis: a structural skeleton of 2
 
 ## Install (30 seconds)
 
-The MCP config is the same JSON block across all clients — only the file location differs.
+**Claude Code — Mac/Linux:**
+
+```bash
+npm install -g compact-mcp && claude mcp add compact -s user -- $(which compact-mcp)
+```
+
+**Claude Code — Windows (PowerShell):**
+
+```powershell
+npm install -g compact-mcp; claude mcp add compact -s user -- (Get-Command compact-mcp).Source
+```
+
+Then run `/restart` in Claude Code. That's it — no manual path config needed.
+
+> **Why not `npx`?** Claude Code on Mac+nvm and Windows doesn't inherit your shell PATH, so `npx` can't be resolved. Installing globally and using the full binary path (the same approach Playwright MCP uses) works reliably across all setups.
+
+---
+
+For other clients, use this JSON block — the file location differs per client:
 
 ```json
 {
@@ -31,13 +49,6 @@ The MCP config is the same JSON block across all clients — only the file locat
     }
   }
 }
-```
-
-**Claude Code** — add to `.mcp.json` at your project root, then `/restart`:
-
-```
-your-project/
-└── .mcp.json   ← paste the block above
 ```
 
 **Cursor** — add to `.cursor/mcp.json` at your project root (or `~/.cursor/mcp.json` for global):
@@ -69,7 +80,9 @@ your-project/
 └── claude_desktop_config.json   ← paste the block above
 ```
 
-> **Requirements:** Node.js 18+. The `npx` command pulls the latest version automatically — no global install needed.
+> **Requirements:** Node.js 18+.
+
+> **If `npx` doesn't work** (Mac+nvm is the most common case): install globally with `npm install -g compact-mcp`, find the binary path with `which compact-mcp`, and replace `"command": "npx"` / `"args": ["-y", "compact-mcp"]` with `"command": "/full/path/to/compact-mcp"` and no `args`.
 
 After every tool call, your AI assistant shows a live savings line:
 
