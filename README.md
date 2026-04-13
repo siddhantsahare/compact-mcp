@@ -20,69 +20,30 @@ compact-mcp solves this with live Babel AST analysis: a structural skeleton of 2
 
 ## Install (30 seconds)
 
-**Claude Code — Mac/Linux:**
-
 ```bash
-npm install -g compact-mcp && claude mcp add compact -s user -- $(which compact-mcp)
+npm install -g compact-mcp && compact-mcp setup
 ```
 
-**Claude Code — Windows (PowerShell):**
+Works on **Mac, Linux, WSL, and Windows (PowerShell)**. One command, all clients.
 
-```powershell
-npm install -g compact-mcp; claude mcp add compact -s user -- (Get-Command compact-mcp).Source
-```
+`compact-mcp setup` auto-detects every installed MCP client and configures them:
 
-Then run `/restart` in Claude Code. That's it — no manual path config needed.
+| Client | Config file |
+|---|---|
+| Claude Code | `claude mcp add` (auto) |
+| Cursor | `~/.cursor/mcp.json` |
+| Windsurf | `~/.codeium/windsurf/mcp_config.json` |
+| Continue | `~/.continue/config.json` |
+| Claude Desktop | Platform-specific config |
+| VS Code | `~/.vscode/mcp.json` |
 
-> **Why not `npx`?** Claude Code on Mac+nvm and Windows doesn't inherit your shell PATH, so `npx` can't be resolved. Installing globally and using the full binary path (the same approach Playwright MCP uses) works reliably across all setups.
+Then restart your AI assistant (in Claude Code: `/restart`).
 
----
+Pass `--claude-md` to also create a `CLAUDE.md` with usage rules for Claude Code.
 
-For other clients, use this JSON block — the file location differs per client:
-
-```json
-{
-  "mcpServers": {
-    "compact": {
-      "command": "npx",
-      "args": ["-y", "compact-mcp"]
-    }
-  }
-}
-```
-
-**Cursor** — add to `.cursor/mcp.json` at your project root (or `~/.cursor/mcp.json` for global):
-
-```
-your-project/
-└── .cursor/
-    └── mcp.json   ← paste the block above
-```
-
-**Windsurf** — add to `~/.codeium/windsurf/mcp_config.json`:
-
-```
-~/.codeium/windsurf/
-└── mcp_config.json   ← paste the block above
-```
-
-**Continue** — add under `mcpServers` in `~/.continue/config.json`:
-
-```
-~/.continue/
-└── config.json   ← paste the block above
-```
-
-**Claude Desktop** — add to `~/Library/Application Support/Claude/claude_desktop_config.json` (macOS) or `%APPDATA%\Claude\claude_desktop_config.json` (Windows):
-
-```
-~/Library/Application Support/Claude/
-└── claude_desktop_config.json   ← paste the block above
-```
+> **How it works:** `setup` uses absolute paths — `process.execPath` for the node binary and `__dirname` for the script location. No `npx`, no PATH lookup, no platform-specific hacks. This is why it works everywhere, including Mac+nvm setups where `npx` fails.
 
 > **Requirements:** Node.js 18+.
-
-> **If `npx` doesn't work** (Mac+nvm is the most common case): install globally with `npm install -g compact-mcp`, find the binary path with `which compact-mcp`, and replace `"command": "npx"` / `"args": ["-y", "compact-mcp"]` with `"command": "/full/path/to/compact-mcp"` and no `args`.
 
 After every tool call, your AI assistant shows a live savings line:
 
